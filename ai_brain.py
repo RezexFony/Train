@@ -1,5 +1,7 @@
 import json
 import os
+import threading
+import time
 from groq import Groq
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -10,15 +12,73 @@ class TrainingAI:
         self.training_data = []
         self.vectorizer = TfidfVectorizer()
         self.vectors = None
+        self.groq_mode = True  # True = Learning Mode, False = Test Mode
+        self.afk_mode = False  # AFK Auto-Training Mode
+        self.afk_thread = None
+        self.training_active = False
         
         # Initialize Groq client
         self.groq_client = Groq(
             api_key="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"
         )
         
+        # Topics for AFK training
+        self.training_topics = [
+            # Roblox Lua Basics
+            "how to create a part in roblox lua",
+            "how to make a gui in roblox",
+            "what is a localscript vs script in roblox",
+            "how to detect player click in roblox",
+            "how to make a teleport script in roblox",
+            "how to use tweenservice in roblox",
+            "how to make a speed boost script",
+            "how to create a button in roblox gui",
+            "what is remotevent in roblox",
+            "how to detect player join in roblox",
+            
+            # Roblox Executor/GUI
+            "how to create an executor gui",
+            "how to make a script executor interface",
+            "what are the main components of a roblox executor",
+            "how to create draggable gui in roblox",
+            "how to make a code editor in roblox gui",
+            "how to create tabs in roblox executor",
+            "how to save scripts in roblox executor",
+            "how to make a script hub gui",
+            "how to create a minimize button for gui",
+            
+            # Lua Programming
+            "what is a table in lua",
+            "how to use loops in lua",
+            "what is metatables in lua",
+            "how to create functions in lua",
+            "what is coroutine in lua",
+            "how to handle errors in lua",
+            "what is pairs vs ipairs in lua",
+            "how to concatenate strings in lua",
+            
+            # General Programming
+            "what is object oriented programming",
+            "how to debug code effectively",
+            "what are best practices for naming variables",
+            "how to optimize code performance",
+            "what is the difference between local and global variables",
+            "how to comment code properly",
+            "what are design patterns",
+            
+            # Communication Skills
+            "how to ask for help with coding problems",
+            "how to explain technical concepts clearly",
+            "how to write good documentation",
+            "how to give constructive code feedback",
+            "how to collaborate on coding projects"
+        ]
+        
+        self.training_index = 0
+        
         self.load_data()
-        print(f"✅ AI loaded with {len(self.training_data)} learned conversations")
-        print("🤖 Groq AI autopilot enabled - I'll teach myself!")
+        print(f"AI loaded with {len(self.training_data)} learned conversations")
+        print("Groq AI autopilot ready - AFK mode available")
     
     def load_data(self):
         """Load training data from JSON file"""
@@ -43,10 +103,74 @@ class TrainingAI:
             questions = [item['question'] for item in self.training_data]
             self.vectors = self.vectorizer.fit_transform(questions)
     
+    def set_mode(self, groq_enabled):
+        """Switch between Test Mode (False) and Learning Mode (True)"""
+        self.groq_mode = groq_enabled
+        mode_name = "Learning Mode" if groq_enabled else "Test Mode"
+        print(f"Switched to: {mode_name}")
+        return mode_name
+    
+    def set_afk_mode(self, enabled):
+        """Enable/Disable AFK Auto-Training Mode"""
+        self.afk_mode = enabled
+        
+        if enabled and not self.training_active:
+            print("AFK Mode ENABLED - Starting auto-training...")
+            self.training_active = True
+            self.afk_thread = threading.Thread(target=self._afk_training_loop, daemon=True)
+            self.afk_thread.start()
+        elif not enabled:
+            print("AFK Mode DISABLED - Stopping auto-training...")
+            self.training_active = False
+        
+        return enabled
+    
+    def _afk_training_loop(self):
+        """Background thread for AFK auto-training"""
+        print("AFK Training Loop Started")
+        
+        while self.training_active and self.afk_mode:
+            try:
+                # Get next training topic
+                if self.training_index >= len(self.training_topics):
+                    self.training_index = 0  # Loop back
+                
+                topic = self.training_topics[self.training_index]
+                
+                # Check if already learned
+                already_learned = False
+                for item in self.training_data:
+                    if item['question'] == topic.lower():
+                        already_learned = True
+                        break
+                
+                if not already_learned:
+                    print(f"AFK Training: Learning about '{topic}'...")
+                    response = self.get_groq_response(topic)
+                    print(f"AFK: Successfully learned topic {self.training_index + 1}/{len(self.training_topics)}")
+                else:
+                    print(f"AFK: Skipping '{topic}' (already learned)")
+                
+                self.training_index += 1
+                
+                # Wait 30 seconds before next training
+                time.sleep(30)
+                
+            except Exception as e:
+                print(f"AFK Training Error: {e}")
+                time.sleep(60)  # Wait longer on error
+        
+        print("AFK Training Loop Ended")
+    
     def add_conversation(self, question, answer):
         """Add new Q&A pair and retrain"""
         q = question.lower().strip()
         a = answer.strip()
+        
+        # Check for duplicates
+        for item in self.training_data:
+            if item['question'] == q:
+                return True  # Already exists
         
         # Add to training data
         self.training_data.append({
@@ -58,7 +182,7 @@ class TrainingAI:
         self.save_data()
         self.update_vectors()
         
-        print(f"🧠 Auto-learned: '{q}'")
+        print(f"Auto-learned: '{q}'")
         return True
     
     def get_groq_response(self, question):
@@ -107,25 +231,28 @@ Keep responses helpful and informative."""
             
             response = chat_completion.choices[0].message.content
             
-            # AUTO-SAVE: Groq teaches the AI automatically!
+            # AUTO-SAVE: Groq teaches the AI automatically
             self.add_conversation(question.lower().strip(), response)
-            print(f"✅ Groq AI taught me about: '{question[:50]}...'")
             
             return response
             
         except Exception as e:
-            print(f"❌ Groq API Error: {e}")
-            return f"❌ Sorry, I couldn't connect to my teacher (Groq AI). Error: {str(e)}"
+            print(f"Groq API Error: {e}")
+            return f"Sorry, I couldn't connect to my teacher (Groq AI). Error: {str(e)}"
     
     def get_response(self, question):
-        """Get AI response - checks learned data first, then asks Groq"""
+        """Get AI response - respects current mode (Test/Learning)"""
         q = question.lower().strip()
         
         # 1. Check exact match in learned data
         for item in self.training_data:
             if item['question'] == q:
-                print(f"📚 Found in memory: '{q}'")
-                return item['answer']
+                print(f"Found exact match in memory: '{q}'")
+                return {
+                    'answer': item['answer'],
+                    'source': 'memory',
+                    'found': True
+                }
         
         # 2. Check for similar questions (fuzzy match)
         if self.vectors is not None and len(self.training_data) > 0:
@@ -138,21 +265,44 @@ Keep responses helpful and informative."""
                 
                 # If very similar (>75% match), use learned answer
                 if best_score > 0.75:
-                    print(f"🔍 Found similar in memory (score: {best_score:.2f})")
-                    return self.training_data[best_idx]['answer']
+                    print(f"Found similar in memory (score: {best_score:.2f})")
+                    return {
+                        'answer': self.training_data[best_idx]['answer'],
+                        'source': 'memory',
+                        'found': True,
+                        'similarity': best_score
+                    }
             except Exception as e:
                 print(f"Error in similarity matching: {e}")
         
-        # 3. No match found - Ask Groq AI and auto-learn!
-        print(f"🤖 Learning from Groq AI: '{q}'")
-        return self.get_groq_response(question)
+        # 3. Not found in memory
+        if self.groq_mode:
+            # LEARNING MODE: Ask Groq and learn
+            print(f"Learning Mode: Asking Groq AI about '{q}'")
+            answer = self.get_groq_response(question)
+            return {
+                'answer': answer,
+                'source': 'groq',
+                'found': False
+            }
+        else:
+            # TEST MODE: Don't ask Groq, just say I don't know
+            print(f"Test Mode: No match found for '{q}'")
+            return {
+                'answer': "I don't know this yet. (Test Mode - Groq is OFF)",
+                'source': 'none',
+                'found': False
+            }
     
     def get_stats(self):
         """Get AI statistics"""
         return {
             'knowledge_count': len(self.training_data),
             'ready': True,
-            'groq_enabled': True
+            'groq_enabled': self.groq_mode,
+            'afk_enabled': self.afk_mode,
+            'afk_progress': f"{self.training_index}/{len(self.training_topics)}",
+            'mode': 'Learning Mode' if self.groq_mode else 'Test Mode'
         }
 
 # Create global AI instance
