@@ -74,19 +74,54 @@ def stats():
 @app.route('/train', methods=['POST'])
 def train():
     """Manually trigger model training"""
-    result = ai.train_model()
+    ai.train_model()
     stats = ai.get_stats()
     
     return jsonify({
         'success': True,
-        'message': result,
+        'message': 'Model retrained successfully!',
         'stats': stats
     })
 
+@app.route('/knowledge', methods=['GET'])
+def knowledge():
+    """Get all knowledge entries"""
+    data = ai.get_all_training_data()
+    
+    # Convert MongoDB ObjectId to string
+    for item in data:
+        item['_id'] = str(item['_id'])
+        if 'created_at' in item:
+            item['created_at'] = str(item['created_at'])
+    
+    return jsonify({
+        'success': True,
+        'count': len(data),
+        'knowledge': data
+    })
+
+@app.route('/delete', methods=['POST'])
+def delete():
+    """Delete a knowledge entry"""
+    data = request.json
+    question = data.get('question', '').strip()
+    
+    if not question:
+        return jsonify({'error': 'Question required'}), 400
+    
+    success = ai.delete_knowledge(question)
+    
+    if success:
+        return jsonify({
+            'success': True,
+            'message': 'Knowledge deleted'
+        })
+    else:
+        return jsonify({'error': 'Not found'}), 404
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    print("Starting AI Training Server...")
-    print(f"AI knows {len(ai.training_data)} things")
+    print("Starting AI Training Server with MongoDB...")
+    print(f"AI knows {ai.get_knowledge_count()} things")
     print(f"Running on port {port}")
-    # FIXED: Set debug=False for production
     app.run(host='0.0.0.0', port=port, debug=False)
