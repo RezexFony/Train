@@ -6,7 +6,7 @@ import time
 import threading
 import pickle
 import numpy as np
-import pandas as pd
+# pandas removed - not needed for core functionality
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.naive_bayes import MultinomialNB
