@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Auto-Learning AI</title>
+    <title>AI Training System</title>
     <style>
         * {
             margin: 0;
@@ -12,78 +12,189 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0a;
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
+            color: #e0e0e0;
         }
 
         .container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
             width: 100%;
-            max-width: 600px;
-            height: 85vh;
+            max-width: 700px;
+            height: 90vh;
             display: flex;
             flex-direction: column;
         }
 
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 25px;
-            text-align: center;
-            border-radius: 20px 20px 0 0;
+            background: linear-gradient(135deg, #1e3a8a 0%, #7c3aed 100%);
+            padding: 24px;
+            border-radius: 12px 12px 0 0;
+            border-bottom: 1px solid #2a2a2a;
         }
 
         .header h1 {
-            font-size: 28px;
-            margin-bottom: 5px;
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #ffffff;
         }
 
         .header p {
+            font-size: 13px;
+            opacity: 0.85;
+            color: #e0e0e0;
+        }
+
+        .controls {
+            background: #1f1f1f;
+            padding: 16px 24px;
+            border-bottom: 1px solid #2a2a2a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .knowledge-count {
             font-size: 14px;
-            opacity: 0.9;
+            color: #a0a0a0;
+            font-weight: 500;
         }
 
-        .stats {
-            background: #f8f9fa;
-            padding: 15px;
-            text-align: center;
-            border-bottom: 1px solid #e0e0e0;
-            font-weight: bold;
-            color: #667eea;
+        .knowledge-count span {
+            color: #60a5fa;
+            font-weight: 600;
         }
 
-        .badge {
+        .toggle-group {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+        }
+
+        .toggle-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toggle-label {
+            font-size: 13px;
+            color: #a0a0a0;
+            font-weight: 500;
+            min-width: 80px;
+        }
+
+        .switch {
+            position: relative;
             display: inline-block;
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-            color: white;
-            padding: 5px 12px;
-            border-radius: 15px;
-            font-size: 12px;
-            margin-left: 10px;
-            animation: pulse 2s infinite;
+            width: 50px;
+            height: 26px;
         }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #3a3a3a;
+            transition: .3s;
+            border-radius: 26px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background: linear-gradient(135deg, #1e3a8a 0%, #7c3aed 100%);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+
+        .status-badge {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 12px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .badge-learning {
+            background: #1e3a8a;
+            color: #60a5fa;
+            border: 1px solid #1e40af;
+        }
+
+        .badge-test {
+            background: #92400e;
+            color: #fbbf24;
+            border: 1px solid #b45309;
+        }
+
+        .badge-afk {
+            background: #065f46;
+            color: #34d399;
+            border: 1px solid #059669;
+        }
+
+        .afk-progress {
+            font-size: 12px;
+            color: #6b7280;
+            margin-left: 8px;
         }
 
         .chat-area {
             flex: 1;
             overflow-y: auto;
             padding: 20px;
-            background: #f8f9fa;
+            background: #0f0f0f;
+        }
+
+        .chat-area::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-area::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+
+        .chat-area::-webkit-scrollbar-thumb {
+            background: #3a3a3a;
+            border-radius: 4px;
         }
 
         .message {
-            margin-bottom: 15px;
+            margin-bottom: 16px;
             display: flex;
             animation: slideIn 0.3s ease;
         }
@@ -105,168 +216,215 @@
 
         .message-bubble {
             max-width: 75%;
-            padding: 12px 18px;
-            border-radius: 18px;
+            padding: 12px 16px;
+            border-radius: 12px;
             word-wrap: break-word;
             white-space: pre-wrap;
+            line-height: 1.5;
+            font-size: 14px;
         }
 
         .user .message-bubble {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: linear-gradient(135deg, #1e3a8a 0%, #7c3aed 100%);
+            color: #ffffff;
         }
 
         .ai .message-bubble {
-            background: white;
-            color: #333;
-            border: 1px solid #e0e0e0;
+            background: #1f1f1f;
+            color: #e0e0e0;
+            border: 1px solid #2a2a2a;
+        }
+
+        .source-badge {
+            font-size: 10px;
+            padding: 3px 8px;
+            border-radius: 8px;
+            margin-top: 8px;
+            display: inline-block;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .source-memory {
+            background: #1e3a8a;
+            color: #60a5fa;
+        }
+
+        .source-groq {
+            background: #065f46;
+            color: #34d399;
         }
 
         .input-area {
             padding: 20px;
-            background: white;
-            border-top: 1px solid #e0e0e0;
-            border-radius: 0 0 20px 20px;
+            background: #1a1a1a;
+            border-top: 1px solid #2a2a2a;
+            border-radius: 0 0 12px 12px;
         }
 
         .input-row {
             display: flex;
             gap: 10px;
-            margin-bottom: 10px;
         }
 
-        input {
+        input[type="text"] {
             flex: 1;
             padding: 14px 18px;
-            border: 2px solid #e0e0e0;
-            border-radius: 25px;
-            font-size: 15px;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            font-size: 14px;
             outline: none;
-            transition: border-color 0.3s;
+            transition: all 0.2s;
+            background: #0f0f0f;
+            color: #e0e0e0;
         }
 
-        input:focus {
-            border-color: #667eea;
+        input[type="text"]:focus {
+            border-color: #3b82f6;
+            background: #1a1a1a;
+        }
+
+        input[type="text"]::placeholder {
+            color: #6b7280;
         }
 
         button {
             padding: 14px 28px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1e3a8a 0%, #7c3aed 100%);
             color: white;
             border: none;
-            border-radius: 25px;
+            border-radius: 8px;
             cursor: pointer;
-            font-weight: bold;
-            font-size: 15px;
-            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s;
         }
 
         button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
         }
 
         button:active {
             transform: translateY(0);
         }
 
-        .teach-section {
-            display: none;
-            animation: slideIn 0.3s ease;
-        }
-
-        .teach-section.active {
-            display: block;
-        }
-
-        .teach-btn {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            padding: 10px 20px;
-            font-size: 14px;
-            margin-right: 10px;
-        }
-
-        .cancel-btn {
-            background: #6c757d;
-        }
-
         .empty-state {
             text-align: center;
             padding: 60px 20px;
-            color: #999;
+            color: #6b7280;
         }
 
         .empty-state h3 {
-            font-size: 24px;
-            margin-bottom: 15px;
-            color: #667eea;
+            font-size: 20px;
+            margin-bottom: 12px;
+            color: #60a5fa;
+            font-weight: 600;
         }
 
         .empty-state p {
-            font-size: 16px;
-            line-height: 1.6;
-        }
-
-        .loading {
-            opacity: 0.6;
-            pointer-events: none;
+            font-size: 14px;
+            line-height: 1.8;
         }
 
         .typing-indicator {
             display: none;
-            padding: 10px;
-            margin-bottom: 10px;
+            padding: 16px 20px;
         }
 
         .typing-indicator.active {
             display: flex;
             align-items: center;
+            gap: 8px;
         }
 
-        .typing-indicator span {
-            height: 10px;
-            width: 10px;
-            background: #667eea;
+        .typing-indicator span.dot {
+            height: 8px;
+            width: 8px;
+            background: #3b82f6;
             border-radius: 50%;
             display: inline-block;
-            margin-right: 5px;
             animation: bounce 1.4s infinite ease-in-out both;
         }
 
-        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
-        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+        .typing-indicator span.dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-indicator span.dot:nth-child(2) { animation-delay: -0.16s; }
+
+        .typing-text {
+            color: #6b7280;
+            font-size: 13px;
+            margin-left: 4px;
+        }
 
         @keyframes bounce {
             0%, 80%, 100% { transform: scale(0); }
             40% { transform: scale(1); }
+        }
+
+        .status-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🧠 Auto-Learning AI</h1>
-            <p>Powered by Groq AI - I teach myself!</p>
+            <h1>AI Training System</h1>
+            <p>Intelligent learning with automatic training capabilities</p>
         </div>
 
-        <div class="stats">
-            📚 Knowledge: <span id="knowledgeCount">0</span> things learned
-            <span class="badge">🤖 AUTO-LEARNING</span>
+        <div class="controls">
+            <div class="knowledge-count">
+                Knowledge Base: <span id="knowledgeCount">0</span> entries
+            </div>
+            
+            <div class="toggle-group">
+                <div class="toggle-item">
+                    <span class="toggle-label">Test Mode</span>
+                    <label class="switch">
+                        <input type="checkbox" id="modeToggle" checked onchange="toggleMode()">
+                        <span class="slider"></span>
+                    </label>
+                    <span class="toggle-label">Learn Mode</span>
+                </div>
+                
+                <div class="toggle-item">
+                    <span class="toggle-label">AFK Training</span>
+                    <label class="switch">
+                        <input type="checkbox" id="afkToggle" onchange="toggleAFK()">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="status-row">
+                <span class="status-badge badge-learning" id="modeStatus">Learning Mode</span>
+                <span class="status-badge badge-afk" id="afkStatus" style="display: none;">
+                    AFK Active<span class="afk-progress" id="afkProgress"></span>
+                </span>
+            </div>
         </div>
 
         <div class="chat-area" id="chatArea">
             <div class="empty-state">
-                <h3>👋 Hello!</h3>
-                <p>Ask me about Roblox Lua, executors, GUI development, programming, or anything!<br><br>
-                I'll automatically learn from Groq AI and remember forever! 🚀</p>
+                <h3>Welcome to AI Training System</h3>
+                <p>
+                    <strong>Learning Mode:</strong> Uses Groq AI to answer and automatically save responses<br>
+                    <strong>Test Mode:</strong> Only uses saved knowledge to verify learning<br>
+                    <strong>AFK Training:</strong> Automatically trains AI on predefined topics every 30 seconds<br><br>
+                    Ask questions about Roblox Lua, executors, GUI development, or general programming
+                </p>
             </div>
         </div>
 
         <div class="typing-indicator" id="typingIndicator">
-            <span></span>
-            <span></span>
-            <span></span>
-            <span style="margin-left: 5px; color: #667eea; font-size: 14px;">AI is thinking...</span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="typing-text">Processing...</span>
         </div>
 
         <div class="input-area">
@@ -274,34 +432,21 @@
                 <input 
                     type="text" 
                     id="questionInput" 
-                    placeholder="Ask me anything..." 
+                    placeholder="Enter your question..." 
                     onkeypress="if(event.key==='Enter') askQuestion()"
                 />
-                <button onclick="askQuestion()">Ask</button>
-            </div>
-
-            <div id="teachSection" class="teach-section">
-                <div class="input-row">
-                    <input 
-                        type="text" 
-                        id="answerInput" 
-                        placeholder="Override with your answer (optional)..." 
-                        onkeypress="if(event.key==='Enter') teachAI()"
-                    />
-                </div>
-                <div>
-                    <button class="teach-btn" onclick="teachAI()">✓ Override</button>
-                    <button class="teach-btn cancel-btn" onclick="cancelTeach()">✗ Cancel</button>
-                </div>
+                <button onclick="askQuestion()">Send</button>
             </div>
         </div>
     </div>
 
     <script>
-        let currentQuestion = '';
         let hasMessages = false;
+        let isLearningMode = true;
+        let isAFKMode = false;
+        let afkUpdateInterval = null;
 
-        function addMessage(text, type) {
+        function addMessage(text, type, source = null) {
             const chatArea = document.getElementById('chatArea');
             
             if (!hasMessages) {
@@ -316,9 +461,15 @@
             bubbleDiv.className = 'message-bubble';
             bubbleDiv.textContent = text;
             
+            if (type === 'ai' && source) {
+                const badge = document.createElement('div');
+                badge.className = `source-badge source-${source}`;
+                badge.textContent = source === 'memory' ? 'FROM MEMORY' : 'LEARNED FROM GROQ';
+                bubbleDiv.appendChild(badge);
+            }
+            
             messageDiv.appendChild(bubbleDiv);
             chatArea.appendChild(messageDiv);
-            
             chatArea.scrollTop = chatArea.scrollHeight;
         }
 
@@ -330,6 +481,90 @@
             document.getElementById('typingIndicator').classList.remove('active');
         }
 
+        async function toggleMode() {
+            const toggle = document.getElementById('modeToggle');
+            const modeStatus = document.getElementById('modeStatus');
+            isLearningMode = toggle.checked;
+
+            try {
+                const response = await fetch('/switch-mode', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({groq_enabled: isLearningMode})
+                });
+
+                const data = await response.json();
+                
+                if (isLearningMode) {
+                    modeStatus.textContent = 'Learning Mode';
+                    modeStatus.className = 'status-badge badge-learning';
+                } else {
+                    modeStatus.textContent = 'Test Mode';
+                    modeStatus.className = 'status-badge badge-test';
+                }
+
+                addMessage(data.message, 'ai');
+            } catch (error) {
+                console.error('Mode switch failed:', error);
+            }
+        }
+
+        async function toggleAFK() {
+            const toggle = document.getElementById('afkToggle');
+            const afkStatus = document.getElementById('afkStatus');
+            isAFKMode = toggle.checked;
+
+            try {
+                const response = await fetch('/toggle-afk', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({afk_enabled: isAFKMode})
+                });
+
+                const data = await response.json();
+                
+                if (isAFKMode) {
+                    afkStatus.style.display = 'inline-block';
+                    document.getElementById('afkProgress').textContent = ` (${data.afk_progress})`;
+                    startAFKUpdater();
+                } else {
+                    afkStatus.style.display = 'none';
+                    stopAFKUpdater();
+                }
+
+                document.getElementById('knowledgeCount').textContent = data.knowledge_count;
+                addMessage(data.message, 'ai');
+            } catch (error) {
+                console.error('AFK toggle failed:', error);
+            }
+        }
+
+        function startAFKUpdater() {
+            if (afkUpdateInterval) {
+                clearInterval(afkUpdateInterval);
+            }
+            
+            afkUpdateInterval = setInterval(async () => {
+                if (!isAFKMode) return;
+                
+                try {
+                    const response = await fetch('/stats');
+                    const data = await response.json();
+                    document.getElementById('knowledgeCount').textContent = data.knowledge_count;
+                    document.getElementById('afkProgress').textContent = ` (${data.afk_progress})`;
+                } catch (error) {
+                    console.error('Stats update failed:', error);
+                }
+            }, 5000);
+        }
+
+        function stopAFKUpdater() {
+            if (afkUpdateInterval) {
+                clearInterval(afkUpdateInterval);
+                afkUpdateInterval = null;
+            }
+        }
+
         async function askQuestion() {
             const input = document.getElementById('questionInput');
             const question = input.value.trim();
@@ -338,8 +573,6 @@
 
             addMessage(question, 'user');
             input.value = '';
-            currentQuestion = question;
-
             showTyping();
 
             try {
@@ -352,63 +585,13 @@
                 const data = await response.json();
                 
                 hideTyping();
-                addMessage(data.response, 'ai');
+                addMessage(data.response, 'ai', data.source);
                 document.getElementById('knowledgeCount').textContent = data.knowledge_count;
 
             } catch (error) {
                 hideTyping();
-                addMessage('❌ Error: Could not connect to AI', 'ai');
+                addMessage('Error: Could not connect to AI system', 'ai');
             }
-        }
-
-        function showTeachSection() {
-            const teachSection = document.getElementById('teachSection');
-            teachSection.classList.add('active');
-            document.getElementById('answerInput').focus();
-        }
-
-        function hideTeachSection() {
-            const teachSection = document.getElementById('teachSection');
-            teachSection.classList.remove('active');
-            document.getElementById('answerInput').value = '';
-        }
-
-        async function teachAI() {
-            const answer = document.getElementById('answerInput').value.trim();
-            
-            if (!answer) {
-                alert('Please enter an answer!');
-                return;
-            }
-
-            document.body.classList.add('loading');
-
-            try {
-                const response = await fetch('/teach', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        question: currentQuestion,
-                        answer: answer
-                    })
-                });
-
-                const data = await response.json();
-                
-                if (data.success) {
-                    addMessage(data.message, 'ai');
-                    document.getElementById('knowledgeCount').textContent = data.knowledge_count;
-                    hideTeachSection();
-                }
-            } catch (error) {
-                addMessage('❌ Error: Could not save the answer', 'ai');
-            } finally {
-                document.body.classList.remove('loading');
-            }
-        }
-
-        function cancelTeach() {
-            hideTeachSection();
         }
 
         window.onload = async function() {
