@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,318 +13,197 @@
         }
 
         body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #0f0f1e 0%, #1a1a2e 100%);
+            color: #e0e0e0;
             min-height: 100vh;
             display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .container {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            width: 100%;
-            max-width: 900px;
-            height: 90vh;
-            display: flex;
             flex-direction: column;
-            overflow: hidden;
         }
 
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 25px;
-            color: white;
-            text-align: center;
+            background: rgba(26, 26, 46, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1rem 1.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
-        .header h1 {
-            font-size: 28px;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .header p {
-            font-size: 14px;
-            opacity: 0.9;
-        }
-
-        .stats-bar {
-            background: #f8f9fa;
-            padding: 15px 25px;
-            border-bottom: 2px solid #e9ecef;
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
+        }
+
+        .logo {
+            font-size: 1.25rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stats {
+            display: flex;
+            gap: 1.5rem;
+            font-size: 0.85rem;
         }
 
         .stat-item {
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-size: 13px;
-        }
-
-        .stat-icon {
-            font-size: 18px;
-        }
-
-        .stat-label {
-            color: #6c757d;
+            gap: 0.5rem;
+            color: #a0a0a0;
         }
 
         .stat-value {
-            font-weight: 600;
             color: #667eea;
-        }
-
-        .language-toggle {
-            display: flex;
-            gap: 10px;
-        }
-
-        .lang-btn {
-            padding: 6px 12px;
-            border: 2px solid #667eea;
-            background: white;
-            color: #667eea;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 12px;
             font-weight: 600;
-            transition: all 0.2s;
         }
 
-        .lang-btn.active {
-            background: #667eea;
-            color: white;
-        }
-
-        .chat-area {
+        .container {
             flex: 1;
-            padding: 25px;
-            overflow-y: auto;
-            background: white;
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
         }
 
-        .chat-area::-webkit-scrollbar {
+        .chat-container {
+            flex: 1;
+            background: rgba(26, 26, 46, 0.5);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1.5rem;
+            overflow-y: auto;
+            min-height: 400px;
+            max-height: calc(100vh - 300px);
+        }
+
+        .chat-container::-webkit-scrollbar {
             width: 8px;
         }
 
-        .chat-area::-webkit-scrollbar-track {
-            background: #f1f1f1;
+        .chat-container::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
         }
 
-        .chat-area::-webkit-scrollbar-thumb {
-            background: #667eea;
+        .chat-container::-webkit-scrollbar-thumb {
+            background: rgba(102, 126, 234, 0.5);
             border-radius: 4px;
         }
 
         .message {
-            margin-bottom: 20px;
-            display: flex;
-            animation: slideIn 0.3s ease;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .message.user {
-            justify-content: flex-end;
-        }
-
-        .message-content {
-            max-width: 70%;
+            margin-bottom: 1rem;
             display: flex;
             flex-direction: column;
         }
 
-        .message-bubble {
-            padding: 14px 18px;
-            border-radius: 18px;
-            word-wrap: break-word;
-            white-space: pre-wrap;
-            line-height: 1.5;
-            font-size: 15px;
-            position: relative;
+        .message.user {
+            align-items: flex-end;
         }
 
-        .user .message-bubble {
+        .message.ai {
+            align-items: flex-start;
+        }
+
+        .message-label {
+            font-size: 0.75rem;
+            color: #808080;
+            margin-bottom: 0.25rem;
+            font-weight: 500;
+        }
+
+        .message-content {
+            max-width: 75%;
+            padding: 0.875rem 1.125rem;
+            border-radius: 12px;
+            line-height: 1.5;
+            font-size: 0.9rem;
+        }
+
+        .message.user .message-content {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            border-bottom-right-radius: 4px;
         }
 
-        .ai .message-bubble {
-            background: #f8f9fa;
-            color: #212529;
-            border: 1px solid #e9ecef;
-            border-bottom-left-radius: 4px;
+        .message.ai .message-content {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e0e0e0;
         }
 
         .message-meta {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 6px;
-            font-size: 11px;
-            color: #6c757d;
-        }
-
-        .confidence-badge {
-            padding: 3px 8px;
-            border-radius: 10px;
-            font-weight: 600;
-            font-size: 10px;
-        }
-
-        .confidence-high {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .confidence-medium {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .confidence-low {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        .category-badge {
-            background: #667eea;
-            color: white;
-            padding: 3px 8px;
-            border-radius: 10px;
-            font-size: 10px;
-            font-weight: 600;
-        }
-
-        .language-badge {
-            background: #764ba2;
-            color: white;
-            padding: 3px 8px;
-            border-radius: 10px;
-            font-size: 10px;
-            font-weight: 600;
-        }
-
-        .welcome-message {
-            text-align: center;
-            padding: 60px 20px;
-            color: #6c757d;
-        }
-
-        .welcome-message h2 {
-            color: #667eea;
-            margin-bottom: 15px;
-            font-size: 24px;
-        }
-
-        .welcome-message p {
-            margin-bottom: 10px;
-            line-height: 1.6;
-        }
-
-        .feature-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin-top: 25px;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        .feature-card {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 12px;
-            border: 2px solid #e9ecef;
-            transition: all 0.2s;
-        }
-
-        .feature-card:hover {
-            border-color: #667eea;
-            transform: translateY(-2px);
-        }
-
-        .feature-icon {
-            font-size: 24px;
-            margin-bottom: 8px;
-        }
-
-        .feature-title {
-            font-weight: 600;
-            color: #212529;
-            margin-bottom: 5px;
-            font-size: 14px;
-        }
-
-        .feature-desc {
-            font-size: 12px;
-            color: #6c757d;
+            font-size: 0.7rem;
+            color: #606060;
+            margin-top: 0.25rem;
         }
 
         .input-area {
-            padding: 20px 25px;
-            background: #f8f9fa;
-            border-top: 2px solid #e9ecef;
-        }
-
-        .input-row {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-
-        input[type="text"] {
-            flex: 1;
-            padding: 14px 18px;
-            border: 2px solid #e9ecef;
+            background: rgba(26, 26, 46, 0.8);
             border-radius: 12px;
-            font-size: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        input[type="text"],
+        textarea {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 0.75rem;
+            color: #e0e0e0;
+            font-size: 0.9rem;
             outline: none;
             transition: all 0.2s;
-            background: white;
         }
 
-        input[type="text"]:focus {
+        input[type="text"]:focus,
+        textarea:focus {
             border-color: #667eea;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 44px;
+            max-height: 120px;
+            font-family: inherit;
         }
 
         button {
-            padding: 14px 30px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            border-radius: 12px;
-            cursor: pointer;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-size: 0.9rem;
             font-weight: 600;
-            font-size: 15px;
+            cursor: pointer;
             transition: all 0.2s;
+            white-space: nowrap;
         }
 
         button:hover {
-            transform: translateY(-2px);
+            transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
         }
 
@@ -331,318 +211,354 @@
             transform: translateY(0);
         }
 
-        .train-btn {
-            background: #28a745;
-            padding: 8px 16px;
-            font-size: 13px;
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
-        .typing-indicator {
+        .teach-mode {
+            background: rgba(26, 26, 46, 0.5);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1rem;
             display: none;
-            align-items: center;
-            gap: 8px;
-            padding: 14px 18px;
-            background: #f8f9fa;
-            border-radius: 18px;
-            width: fit-content;
-            border-bottom-left-radius: 4px;
         }
 
-        .typing-indicator.active {
+        .teach-mode.active {
+            display: block;
+        }
+
+        .teach-header {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 0.75rem;
+        }
+
+        .teach-inputs {
             display: flex;
-        }
-
-        .typing-dot {
-            width: 8px;
-            height: 8px;
-            background: #667eea;
-            border-radius: 50%;
-            animation: typing 1.4s infinite ease-in-out;
-        }
-
-        .typing-dot:nth-child(1) { animation-delay: 0s; }
-        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-
-        @keyframes typing {
-            0%, 60%, 100% { transform: scale(1); opacity: 0.5; }
-            30% { transform: scale(1.5); opacity: 1; }
+            flex-direction: column;
+            gap: 0.5rem;
         }
 
         .quick-actions {
             display: flex;
-            gap: 10px;
-            margin-top: 12px;
+            gap: 0.5rem;
             flex-wrap: wrap;
         }
 
         .quick-btn {
-            padding: 8px 14px;
-            background: white;
-            border: 2px solid #667eea;
-            color: #667eea;
-            border-radius: 20px;
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #a0a0a0;
+            padding: 0.5rem 0.875rem;
+            font-size: 0.8rem;
+            border-radius: 6px;
         }
 
         .quick-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #e0e0e0;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .loading {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            color: #808080;
+            font-size: 0.85rem;
+        }
+
+        .loading.active {
+            display: flex;
+        }
+
+        .loading-dots {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .loading-dot {
+            width: 6px;
+            height: 6px;
             background: #667eea;
-            color: white;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+
+        .loading-dot:nth-child(1) { animation-delay: -0.32s; }
+        .loading-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        .error-message {
+            background: rgba(220, 38, 38, 0.1);
+            border: 1px solid rgba(220, 38, 38, 0.3);
+            color: #fca5a5;
+            padding: 0.75rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            display: none;
+        }
+
+        .error-message.active {
+            display: block;
+        }
+
+        .code-block {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            padding: 0.875rem;
+            margin: 0.5rem 0;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .stats {
+                font-size: 0.75rem;
+                gap: 1rem;
+            }
+
+            .message-content {
+                max-width: 90%;
+            }
+
+            .input-wrapper {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>
-                <span>🎮</span>
-                Roblox Lua AI Assistant
-                <span>🤖</span>
-            </h1>
-            <p>Bilingual AI Expert in Roblox Lua 5.1, GUI Development & Executors</p>
-        </div>
-
-        <div class="stats-bar">
-            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">Roblox Lua AI</div>
+            <div class="stats">
                 <div class="stat-item">
-                    <span class="stat-icon">📚</span>
-                    <span class="stat-label">Knowledge:</span>
+                    <span>Knowledge:</span>
                     <span class="stat-value" id="knowledgeCount">0</span>
                 </div>
                 <div class="stat-item">
-                    <span class="stat-icon">🎯</span>
-                    <span class="stat-label">Accuracy:</span>
-                    <span class="stat-value" id="accuracy">0%</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-icon">💬</span>
-                    <span class="stat-label">Conversations:</span>
-                    <span class="stat-value" id="conversations">0</span>
+                    <span>Accuracy:</span>
+                    <span class="stat-value" id="accuracyStat">0%</span>
                 </div>
             </div>
-            
-            <div class="language-toggle">
-                <button class="lang-btn active" onclick="setLanguage('auto')">🌐 Auto</button>
-                <button class="lang-btn" onclick="setLanguage('en')">🇺🇸 English</button>
-                <button class="lang-btn" onclick="setLanguage('tl')">🇵🇭 Tagalog</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="chat-container" id="chatContainer">
+            <div class="message ai">
+                <div class="message-label">AI Assistant</div>
+                <div class="message-content">
+                    Hello! I'm your Roblox Lua AI assistant. I can help you with Lua scripting, GUI development, and executor knowledge. Ask me anything!
+                </div>
             </div>
         </div>
 
-        <div class="chat-area" id="chatArea">
-            <div class="welcome-message">
-                <h2>Welcome to Your AI Assistant! 👋</h2>
-                <p>I'm specialized in Roblox Lua scripting and I speak both English and Tagalog!</p>
-                <p><strong>Kumusta! Marunong ako mag-Tagalog at English! 🇵🇭</strong></p>
-                
-                <div class="feature-grid">
-                    <div class="feature-card">
-                        <div class="feature-icon">📝</div>
-                        <div class="feature-title">Lua 5.1 Scripting</div>
-                        <div class="feature-desc">Variables, functions, tables, loops</div>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon">🎨</div>
-                        <div class="feature-title">GUI Development</div>
-                        <div class="feature-desc">ScreenGui, Frames, Buttons, UDim2</div>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon">⚡</div>
-                        <div class="feature-title">Executor Knowledge</div>
-                        <div class="feature-desc">loadstring, getgenv, script hubs</div>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon">🌐</div>
-                        <div class="feature-title">Bilingual Support</div>
-                        <div class="feature-desc">English & Tagalog conversations</div>
-                    </div>
-                </div>
+        <div class="error-message" id="errorMessage"></div>
+
+        <div class="teach-mode" id="teachMode">
+            <div class="teach-header">Teach Mode</div>
+            <div class="teach-inputs">
+                <input type="text" id="teachQuestion" placeholder="Question to teach...">
+                <textarea id="teachAnswer" placeholder="Answer to teach..." rows="2"></textarea>
+                <button onclick="teachAI()">Save Knowledge</button>
             </div>
         </div>
 
         <div class="input-area">
-            <div class="input-row">
-                <input 
-                    type="text" 
-                    id="userInput" 
-                    placeholder="Ask me anything about Roblox Lua... (English or Tagalog)"
-                    onkeypress="if(event.key==='Enter') sendMessage()"
-                />
-                <button onclick="sendMessage()">Send 🚀</button>
-                <button class="train-btn" onclick="trainModel()">Train 🎓</button>
+            <div class="input-wrapper">
+                <input type="text" id="userInput" placeholder="Ask about Roblox Lua, GUI, or executors..." onkeypress="if(event.key==='Enter') sendMessage()">
+                <button onclick="sendMessage()" id="sendBtn">Send</button>
             </div>
-            
-            <div class="quick-actions">
-                <button class="quick-btn" onclick="quickAsk('how to create variable in lua')">Variables</button>
-                <button class="quick-btn" onclick="quickAsk('how to make gui in roblox')">GUI Example</button>
-                <button class="quick-btn" onclick="quickAsk('what is loadstring')">Loadstring</button>
-                <button class="quick-btn" onclick="quickAsk('paano gumawa ng script')">Tagalog Tutorial</button>
+        </div>
+
+        <div class="quick-actions">
+            <button class="quick-btn" onclick="toggleTeachMode()">Teach AI</button>
+            <button class="quick-btn" onclick="askQuestion('how to create variable in lua')">Variables</button>
+            <button class="quick-btn" onclick="askQuestion('how to make gui in roblox')">GUI Example</button>
+            <button class="quick-btn" onclick="askQuestion('what is loadstring')">Loadstring</button>
+            <button class="quick-btn" onclick="getStats()">Refresh Stats</button>
+        </div>
+
+        <div class="loading" id="loadingIndicator">
+            <span>Processing</span>
+            <div class="loading-dots">
+                <div class="loading-dot"></div>
+                <div class="loading-dot"></div>
+                <div class="loading-dot"></div>
             </div>
         </div>
     </div>
 
     <script>
-        let currentLanguage = 'auto';
-        let messageCount = 0;
+        let isTeachMode = false;
 
-        function setLanguage(lang) {
-            currentLanguage = lang;
-            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
+        function showError(message) {
+            const errorEl = document.getElementById('errorMessage');
+            errorEl.textContent = message;
+            errorEl.classList.add('active');
+            setTimeout(() => errorEl.classList.remove('active'), 5000);
         }
 
-        function addMessage(text, type, metadata = {}) {
-            const chatArea = document.getElementById('chatArea');
-            
-            // Remove welcome message if exists
-            const welcome = chatArea.querySelector('.welcome-message');
-            if (welcome) welcome.remove();
+        function showLoading(show) {
+            document.getElementById('loadingIndicator').classList.toggle('active', show);
+        }
 
+        function toggleTeachMode() {
+            isTeachMode = !isTeachMode;
+            document.getElementById('teachMode').classList.toggle('active', isTeachMode);
+        }
+
+        function formatResponse(text) {
+            // Format code blocks
+            text = text.replace(/```(\w+)?\n([\s\S]+?)```/g, '<div class="code-block">$2</div>');
+            text = text.replace(/`([^`]+)`/g, '<code style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 3px; font-family: monospace;">$1</code>');
+            
+            // Format line breaks
+            text = text.replace(/\n/g, '<br>');
+            
+            return text;
+        }
+
+        function addMessage(content, isUser = false, meta = '') {
+            const chatContainer = document.getElementById('chatContainer');
             const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${type}`;
+            messageDiv.className = `message ${isUser ? 'user' : 'ai'}`;
+            
+            const label = document.createElement('div');
+            label.className = 'message-label';
+            label.textContent = isUser ? 'You' : 'AI Assistant';
             
             const contentDiv = document.createElement('div');
             contentDiv.className = 'message-content';
+            contentDiv.innerHTML = formatResponse(content);
             
-            const bubbleDiv = document.createElement('div');
-            bubbleDiv.className = 'message-bubble';
-            bubbleDiv.textContent = text;
+            messageDiv.appendChild(label);
+            messageDiv.appendChild(contentDiv);
             
-            contentDiv.appendChild(bubbleDiv);
-            
-            // Add metadata for AI messages
-            if (type === 'ai' && metadata) {
+            if (meta) {
                 const metaDiv = document.createElement('div');
                 metaDiv.className = 'message-meta';
-                
-                if (metadata.confidence !== undefined) {
-                    const confBadge = document.createElement('span');
-                    const conf = metadata.confidence * 100;
-                    confBadge.className = `confidence-badge ${
-                        conf > 70 ? 'confidence-high' : 
-                        conf > 40 ? 'confidence-medium' : 
-                        'confidence-low'
-                    }`;
-                    confBadge.textContent = `${conf.toFixed(0)}% confidence`;
-                    metaDiv.appendChild(confBadge);
-                }
-                
-                if (metadata.category) {
-                    const catBadge = document.createElement('span');
-                    catBadge.className = 'category-badge';
-                    catBadge.textContent = metadata.category.replace('_', ' ');
-                    metaDiv.appendChild(catBadge);
-                }
-                
-                if (metadata.language) {
-                    const langBadge = document.createElement('span');
-                    langBadge.className = 'language-badge';
-                    langBadge.textContent = metadata.language === 'tl' ? '🇵🇭 Tagalog' : '🇺🇸 English';
-                    metaDiv.appendChild(langBadge);
-                }
-                
-                contentDiv.appendChild(metaDiv);
+                metaDiv.textContent = meta;
+                messageDiv.appendChild(metaDiv);
             }
             
-            messageDiv.appendChild(contentDiv);
-            chatArea.appendChild(messageDiv);
-            chatArea.scrollTop = chatArea.scrollHeight;
-            
-            messageCount++;
-        }
-
-        function showTyping() {
-            const chatArea = document.getElementById('chatArea');
-            const typingDiv = document.createElement('div');
-            typingDiv.id = 'typingIndicator';
-            typingDiv.className = 'typing-indicator active';
-            typingDiv.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
-            chatArea.appendChild(typingDiv);
-            chatArea.scrollTop = chatArea.scrollHeight;
-        }
-
-        function hideTyping() {
-            const typing = document.getElementById('typingIndicator');
-            if (typing) typing.remove();
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
         }
 
         async function sendMessage() {
             const input = document.getElementById('userInput');
-            const message = input.value.trim();
+            const question = input.value.trim();
             
-            if (!message) return;
+            if (!question) return;
             
-            addMessage(message, 'user');
+            addMessage(question, true);
             input.value = '';
-            showTyping();
+            showLoading(true);
             
             try {
                 const response = await fetch('/chat', {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({question: message})
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question })
                 });
                 
                 const data = await response.json();
-                hideTyping();
                 
-                addMessage(data.response, 'ai', {
-                    confidence: data.confidence,
-                    category: data.category,
-                    language: data.language
-                });
-                
-                refreshStats();
+                if (response.ok) {
+                    const meta = `Source: ${data.source} | Confidence: ${(data.confidence * 100).toFixed(0)}%`;
+                    addMessage(data.response, false, meta);
+                    updateStats(data.knowledge_count);
+                } else {
+                    showError(data.error || 'Failed to get response');
+                }
             } catch (error) {
-                hideTyping();
-                addMessage('Sorry, there was an error. Please try again.', 'ai');
+                showError('Network error. Please try again.');
+            } finally {
+                showLoading(false);
             }
         }
 
-        function quickAsk(question) {
+        async function teachAI() {
+            const question = document.getElementById('teachQuestion').value.trim();
+            const answer = document.getElementById('teachAnswer').value.trim();
+            
+            if (!question || !answer) {
+                showError('Please provide both question and answer');
+                return;
+            }
+            
+            showLoading(true);
+            
+            try {
+                const response = await fetch('/teach', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question, answer })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    addMessage(`Learned: "${question}" successfully!`, false);
+                    document.getElementById('teachQuestion').value = '';
+                    document.getElementById('teachAnswer').value = '';
+                    updateStats(data.knowledge_count);
+                    toggleTeachMode();
+                } else {
+                    showError(data.error || 'Failed to teach');
+                }
+            } catch (error) {
+                showError('Network error. Please try again.');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function askQuestion(question) {
             document.getElementById('userInput').value = question;
             sendMessage();
         }
 
-        async function trainModel() {
-            try {
-                const response = await fetch('/train', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'}
-                });
-                
-                const data = await response.json();
-                addMessage(data.message, 'ai', {category: 'system'});
-                refreshStats();
-            } catch (error) {
-                addMessage('Training failed. Please try again.', 'ai');
-            }
+        function updateStats(knowledgeCount) {
+            document.getElementById('knowledgeCount').textContent = knowledgeCount;
         }
 
-        async function refreshStats() {
+        async function getStats() {
             try {
                 const response = await fetch('/stats');
                 const data = await response.json();
                 
-                document.getElementById('knowledgeCount').textContent = data.training_examples || 0;
-                document.getElementById('accuracy').textContent = 
-                    data.stats && data.stats.accuracy 
-                        ? (data.stats.accuracy * 100).toFixed(1) + '%' 
-                        : '0%';
-                document.getElementById('conversations').textContent = 
-                    data.stats && data.stats.conversation_count 
-                        ? data.stats.conversation_count 
-                        : 0;
+                document.getElementById('knowledgeCount').textContent = data.training_examples;
+                document.getElementById('accuracyStat').textContent = 
+                    data.stats.accuracy ? `${(data.stats.accuracy * 100).toFixed(0)}%` : '0%';
             } catch (error) {
-                console.error('Stats refresh failed:', error);
+                console.error('Failed to fetch stats:', error);
             }
         }
 
-        // Initialize
-        window.onload = function() {
-            refreshStats();
-        };
+        // Load stats on page load
+        getStats();
     </script>
 </body>
 </html>
