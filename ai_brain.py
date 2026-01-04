@@ -6,7 +6,6 @@ import time
 import threading
 import pickle
 import numpy as np
-# pandas removed - not needed for core functionality
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.naive_bayes import MultinomialNB
@@ -40,7 +39,7 @@ class RobloxLuaAI:
         self.is_trained = False
         
         # Knowledge storage
-        self.training_data = []  # List of {question, answer, category, language}
+        self.training_data = []
         self.categories = set()
         self.vectors = None
         
@@ -51,7 +50,7 @@ class RobloxLuaAI:
                              'kasi', 'oo', 'hindi', 'salamat', 'kamusta', 'kumusta',
                              'magandang', 'araw', 'gabi', 'umaga', 'tanghali'}
         
-        # Statistics
+        # Statistics - FIXED: Added all missing stats
         self.stats = {
             'total_trained': 0,
             'accuracy': 0.0,
@@ -61,7 +60,9 @@ class RobloxLuaAI:
             'conversation_count': 0,
             'tagalog_count': 0,
             'english_count': 0,
-            'training_sessions': 0
+            'training_sessions': 0,
+            'lua_knowledge': 0,  # ADDED
+            'tagalog_knowledge': 0  # ADDED
         }
         
         # Training mode
@@ -279,7 +280,6 @@ class RobloxLuaAI:
             },
         ]
         
-        # Add all base knowledge
         for item in base_knowledge:
             self.add_training_data(
                 item['question'],
@@ -306,7 +306,6 @@ class RobloxLuaAI:
         with self.lock:
             q = question.lower().strip()
             
-            # Check for duplicates
             for item in self.training_data:
                 if item['question'] == q:
                     return False
@@ -321,15 +320,18 @@ class RobloxLuaAI:
             self.categories.add(category)
             self.stats['total_trained'] += 1
             
-            # Update specific stats
+            # FIXED: Check if keys exist before incrementing
             if category in ['lua_basics', 'roblox_scripting']:
-                self.stats['lua_knowledge'] += 1
+                if 'lua_knowledge' in self.stats:
+                    self.stats['lua_knowledge'] += 1
             elif category == 'gui':
                 self.stats['gui_questions'] += 1
             elif category == 'executor':
                 self.stats['executor_questions'] += 1
-            elif language == 'tl':
-                self.stats['tagalog_knowledge'] += 1
+            
+            if language == 'tl':
+                if 'tagalog_knowledge' in self.stats:
+                    self.stats['tagalog_knowledge'] += 1
             
             print(f"📝 Added: '{q[:40]}...' [Category: {category}, Lang: {language}]")
             return True
@@ -343,15 +345,12 @@ class RobloxLuaAI:
         print("🎓 TRAINING ML MODEL")
         print("="*60)
         
-        # Prepare data
         questions = [item['question'] for item in self.training_data]
         categories = [item['category'] for item in self.training_data]
         
-        # Create TF-IDF vectors
         self.vectors = self.tfidf_vectorizer.fit_transform(questions)
         
-        # Train classifier
-        if len(set(categories)) > 1:  # Need multiple categories
+        if len(set(categories)) > 1:
             X_train, X_test, y_train, y_test = train_test_split(
                 self.vectors, categories, test_size=test_size, random_state=42
             )
@@ -371,7 +370,6 @@ class RobloxLuaAI:
         self.is_trained = True
         self.stats['training_sessions'] += 1
         
-        # Save model
         self.save_model()
         
         print("="*60 + "\n")
@@ -381,7 +379,6 @@ class RobloxLuaAI:
         """Find best matching answer using ML"""
         q = question.lower().strip()
         
-        # Try exact match first
         with self.lock:
             for item in self.training_data:
                 if item['question'] == q:
@@ -393,7 +390,6 @@ class RobloxLuaAI:
                         'found': True
                     }
         
-        # Use ML similarity
         if self.vectors is not None and len(self.training_data) > 0:
             q_vector = self.tfidf_vectorizer.transform([q])
             similarities = cosine_similarity(q_vector, self.vectors)[0]
@@ -401,7 +397,7 @@ class RobloxLuaAI:
             best_idx = np.argmax(similarities)
             best_score = similarities[best_idx]
             
-            if best_score > 0.3:  # Threshold
+            if best_score > 0.3:
                 with self.lock:
                     match = self.training_data[best_idx]
                     return {
@@ -418,7 +414,6 @@ class RobloxLuaAI:
         """Generate fallback response"""
         tokens = question.lower().split()
         
-        # Check for specific topics
         lua_words = ['lua', 'script', 'function', 'variable', 'table', 'loop']
         gui_words = ['gui', 'frame', 'button', 'udim2', 'screengui', 'textbox']
         executor_words = ['executor', 'loadstring', 'getgenv', 'script hub']
@@ -438,28 +433,23 @@ class RobloxLuaAI:
                 return "Executor development ba? Alam ko paano gumawa ng script executor GUI, loadstring, at iba pang executor functions. Tanong lang! ⚡"
             return "Executor development? I know how to create script executor GUIs, use loadstring, and other executor functions. Just ask! ⚡"
         
-        # Generic response
         if lang == 'tl':
             return "Hindi ko pa alam yan, pero nag-aaral ako! Pwede mo akong turuan o magtanong about Roblox Lua, GUI, or executors! 😊"
         return "I'm still learning about that! You can teach me or ask about Roblox Lua, GUI development, or executors! 😊"
     
     def get_response(self, question):
         """Main response method"""
-        # Detect language
         lang = self.detect_language(question)
         
-        # Update stats
         self.stats['conversation_count'] += 1
         if lang == 'tl':
             self.stats['tagalog_count'] += 1
         else:
             self.stats['english_count'] += 1
         
-        # Find answer
         result = self.find_best_match(question)
         
         if result:
-            # Track category stats
             if result['category'] in ['lua_basics', 'roblox_scripting']:
                 self.stats['lua_questions'] += 1
             elif result['category'] == 'gui':
@@ -469,7 +459,6 @@ class RobloxLuaAI:
             
             return result
         
-        # Generate fallback
         answer = self.generate_response(question, lang)
         
         return {
