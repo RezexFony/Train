@@ -1,4 +1,3 @@
-
 import os
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -6,6 +5,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import nltk
 from pymongo import MongoClient
 from datetime import datetime
+from urllib.parse import quote_plus
 
 # Download required NLTK data
 try:
@@ -29,6 +29,9 @@ class RobloxLuaAI:
         # ML Models
         self.tfidf_vectorizer = TfidfVectorizer(max_features=1000, ngram_range=(1, 3))
         self.vectors = None
+        
+        # Fallback in-memory storage
+        self.memory_storage = []
         
         # Language detection
         self.english_stopwords = set(stopwords.words('english'))
@@ -58,11 +61,16 @@ class RobloxLuaAI:
             # Get MongoDB credentials from environment
             mongo_password = os.environ.get('MONGO_PASSWORD', 'Ishsghsiwjsbbdbakiais7291882')
             
-            # MongoDB connection string
-            uri = f"mongodb+srv://Train:{mongo_password}@train.b51tlbn.mongodb.net/?retryWrites=true&w=majority&appName=Train"
+            # URL encode the password to handle special characters
+            encoded_password = quote_plus(mongo_password)
             
-            # Connect to MongoDB
-            client = MongoClient(uri)
+            # MongoDB connection string
+            uri = f"mongodb+srv://Train:{encoded_password}@train.b51tlbn.mongodb.net/?retryWrites=true&w=majority&appName=Train"
+            
+            print(f"🔌 Connecting to MongoDB...")
+            
+            # Connect to MongoDB with timeout
+            client = MongoClient(uri, serverSelectionTimeoutMS=5000)
             
             # Test connection
             client.admin.command('ping')
@@ -75,69 +83,83 @@ class RobloxLuaAI:
             self.collection.create_index('question', unique=True)
             
             print("✅ Connected to MongoDB!")
+            return True
         except Exception as e:
             print(f"❌ MongoDB connection error: {e}")
+            print("⚠️ AI will work but won't save data permanently")
             self.db = None
             self.collection = None
+            return False
     
     def get_knowledge_count(self):
         """Get total knowledge entries"""
-        if not self.collection:
-            return 0
+        if self.collection:
+            try:
+                return self.collection.count_documents({})
+            except Exception as e:
+                print(f"❌ Error getting count: {e}")
         
-        try:
-            return self.collection.count_documents({})
-        except Exception as e:
-            print(f"❌ Error getting count: {e}")
-            return 0
+        # Fallback to memory storage
+        return len(self.memory_storage)
     
     def add_training_data(self, question, answer, category='general', language='en'):
-        """Add new training data to MongoDB - ACTUALLY SAVES FOREVER!"""
-        if not self.collection:
-            print("⚠️ No database connection")
-            return False
-        
+        """Add new training data - works with or without MongoDB"""
         q = question.lower().strip()
         
-        try:
-            # Prepare document
-            doc = {
-                'question': q,
-                'answer': answer.strip(),
-                'category': category,
-                'language': language,
-                'created_at': datetime.utcnow()
-            }
-            
-            # Insert or update
-            result = self.collection.update_one(
-                {'question': q},
-                {'$set': doc},
-                upsert=True
-            )
-            
-            if result.upserted_id or result.modified_count > 0:
-                print(f"📝 Learned: '{q[:50]}...' [Category: {category}]")
-                # Retrain model with new data
-                self.train_model()
-                return True
-            else:
+        # Try MongoDB first
+        if self.collection:
+            try:
+                doc = {
+                    'question': q,
+                    'answer': answer.strip(),
+                    'category': category,
+                    'language': language,
+                    'created_at': datetime.utcnow()
+                }
+                
+                result = self.collection.update_one(
+                    {'question': q},
+                    {'$set': doc},
+                    upsert=True
+                )
+                
+                if result.upserted_id or result.modified_count > 0:
+                    print(f"📝 Learned: '{q[:50]}...' [Category: {category}]")
+                    self.train_model()
+                    return True
+                else:
+                    print(f"⚠️ Already know this: '{q[:50]}...'")
+                    return False
+            except Exception as e:
+                print(f"❌ MongoDB error, using memory: {e}")
+        
+        # Fallback to memory storage
+        for item in self.memory_storage:
+            if item['question'] == q:
                 print(f"⚠️ Already know this: '{q[:50]}...'")
                 return False
-        except Exception as e:
-            print(f"❌ Error adding data: {e}")
-            return False
+        
+        self.memory_storage.append({
+            'question': q,
+            'answer': answer.strip(),
+            'category': category,
+            'language': language
+        })
+        
+        print(f"📝 Learned (memory): '{q[:50]}...' [Category: {category}]")
+        self.train_model()
+        return True
     
     def get_all_training_data(self):
-        """Get all training data from MongoDB"""
-        if not self.collection:
-            return []
+        """Get all training data from MongoDB or memory"""
+        if self.collection:
+            try:
+                return list(self.collection.find({}).sort('_id', 1))
+            except Exception as e:
+                print(f"❌ Error fetching from MongoDB: {e}")
         
-        try:
-            return list(self.collection.find({}).sort('_id', 1))
-        except Exception as e:
-            print(f"❌ Error fetching data: {e}")
-            return []
+        # Fallback to memory storage
+        return self.memory_storage
     
     def train_model(self):
         """Train the ML model with current data"""
