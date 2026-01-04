@@ -1,7 +1,26 @@
+# Web Framework
 flask
-scikit-learn
-numpy
 gunicorn
-groq
-google-generativeai
-openai
+
+# Machine Learning & AI
+numpy
+scikit-learn
+scipy
+
+# Natural Language Processing
+nltk
+
+# Data Processing
+pandas
+
+# For saving/loading trained models
+pickle5
+
+# Optional but recommended
+joblib
+
+# For better text processing
+python-Levenshtein
+
+# For JSON handling
+jsonschema
