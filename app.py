@@ -9,6 +9,11 @@ def home():
     """Main page"""
     return render_template('index.html')
 
+@app.route('/train-page')
+def train_page():
+    """Bulk training page"""
+    return render_template('bulk_train.html')
+
 @app.route('/chat', methods=['POST'])
 def chat():
     """Handle chat requests"""
