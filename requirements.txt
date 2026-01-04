@@ -1,26 +1,19 @@
 # Web Framework
-flask
-gunicorn
+flask==3.0.0
+gunicorn==21.2.0
 
 # Machine Learning & AI
-numpy
-scikit-learn
-scipy
+numpy==1.24.3
+scikit-learn==1.3.2
 
 # Natural Language Processing
-nltk
+nltk==3.8.1
 
-# Data Processing
-pandas
+# Data Processing (lightweight)
+# pandas  # Remove this if still having issues
 
 # For saving/loading trained models
-pickle5
+# pickle is built-in to Python, no need to install
 
-# Optional but recommended
-joblib
-
-# For better text processing
-python-Levenshtein
-
-# For JSON handling
-jsonschema
+# For better performance
+joblib==1.3.2
