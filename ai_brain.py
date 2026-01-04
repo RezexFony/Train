@@ -153,12 +153,12 @@ class TrainingAI:
                 
                 self.training_index += 1
                 
-                # Wait 30 seconds before next training
-                time.sleep(30)
+                # Wait 3 seconds before next training - FAST MODE
+                time.sleep(3)
                 
             except Exception as e:
                 print(f"AFK Training Error: {e}")
-                time.sleep(60)  # Wait longer on error
+                time.sleep(10)  # Wait 10 seconds on error, then retry
         
         print("AFK Training Loop Ended")
     
@@ -203,6 +203,8 @@ Your teaching style:
 - Be encouraging and supportive
 - Answer in a conversational, friendly tone
 - Teach how to communicate professionally
+- Teach All Programmers Language if she wants 
+
 
 When discussing Roblox/Lua:
 - Focus on educational and development aspects
