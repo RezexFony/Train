@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulk Train AI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f0f1e 0%, #1a1a2e 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: rgba(26, 26, 46, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .card h2 {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            color: #667eea;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 1rem;
+            color: #e0e0e0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            resize: vertical;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.875rem 1.75rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-right: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .secondary {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .result {
+            background: rgba(102, 126, 234, 0.1);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .result.success {
+            background: rgba(34, 197, 94, 0.1);
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+
+        .result.error {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .template-btn {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            margin: 0.25rem;
+        }
+
+        .info {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎓 Bulk Train Your AI</h1>
+
+        <div class="info">
+            <strong>Format:</strong> Enter questions and answers in JSON format. Each entry needs: question, answer, category (optional), language (optional)
+        </div>
+
+        <div class="card">
+            <h2>Quick Templates</h2>
+            <button class="template-btn" onclick="loadTemplate('basic')">Basic Lua</button>
+            <button class="template-btn" onclick="loadTemplate('advanced')">Advanced Scripts</button>
+            <button class="template-btn" onclick="loadTemplate('gui')">GUI Examples</button>
+            <button class="template-btn" onclick="loadTemplate('games')">Game Mechanics</button>
+            <button class="template-btn" onclick="loadTemplate('tagalog')">Tagalog</button>
+        </div>
+
+        <div class="card">
+            <h2>Training Data (JSON)</h2>
+            <textarea id="trainingData" placeholder='[
+  {
+    "question": "how to teleport player",
+    "answer": "player.Character.HumanoidRootPart.CFrame = CFrame.new(0, 50, 0)",
+    "category": "roblox_scripting"
+  },
+  {
+    "question": "how to give tool to player",
+    "answer": "local tool = game.ServerStorage.Tool:Clone()\ntool.Parent = player.Backpack",
+    "category": "roblox_scripting"
+  }
+]'></textarea>
+            
+            <button onclick="bulkTrain()">Train AI</button>
+            <button class="secondary" onclick="validateJSON()">Validate JSON</button>
+            <button class="secondary" onclick="clearData()">Clear</button>
+            
+            <div id="result" class="result"></div>
+        </div>
+
+        <div class="card">
+            <h2>📊 Current Stats</h2>
+            <p>Total Knowledge: <strong id="totalKnowledge">Loading...</strong></p>
+            <p>Accuracy: <strong id="accuracy">Loading...</strong></p>
+            <button onclick="loadStats()">Refresh Stats</button>
+        </div>
+    </div>
+
+    <script>
+        const templates = {
+            basic: [
+                {
+                    "question": "how to print in lua",
+                    "answer": "print('Hello World')\n\nYou can print variables too:\nlocal name = 'John'\nprint(name)",
+                    "category": "lua_basics"
+                },
+                {
+                    "question": "how to make if statement",
+                    "answer": "if condition then\n  -- code\nelseif otherCondition then\n  -- code\nelse\n  -- code\nend",
+                    "category": "lua_basics"
+                },
+                {
+                    "question": "how to concatenate strings",
+                    "answer": "Use .. operator:\nlocal text = 'Hello' .. ' ' .. 'World'\nprint(text) -- Hello World",
+                    "category": "lua_basics"
+                }
+            ],
+            advanced: [
+                {
+                    "question": "how to make kill brick",
+                    "answer": "local killBrick = script.Parent\n\nkillBrick.Touched:Connect(function(hit)\n  local humanoid = hit.Parent:FindFirstChild('Humanoid')\n  if humanoid then\n    humanoid.Health = 0\n  end\nend)",
+                    "category": "roblox_advanced"
+                },
+                {
+                    "question": "how to make speed coil",
+                    "answer": "local speedPad = script.Parent\n\nspeedPad.Touched:Connect(function(hit)\n  local humanoid = hit.Parent:FindFirstChild('Humanoid')\n  if humanoid then\n    humanoid.WalkSpeed = 100\n    wait(5)\n    humanoid.WalkSpeed = 16\n  end\nend)",
+                    "category": "roblox_advanced"
+                },
+                {
+                    "question": "how to make door",
+                    "answer": "local door = script.Parent\nlocal isOpen = false\n\nfunction toggleDoor()\n  isOpen = not isOpen\n  if isOpen then\n    door.CanCollide = false\n    door.Transparency = 0.5\n  else\n    door.CanCollide = true\n    door.Transparency = 0\n  end\nend\n\ndoor.ClickDetector.MouseClick:Connect(toggleDoor)",
+                    "category": "roblox_advanced"
+                }
+            ],
+            gui: [
+                {
+                    "question": "how to make health bar",
+                    "answer": "local player = game.Players.LocalPlayer\nlocal humanoid = player.Character:WaitForChild('Humanoid')\nlocal bar = script.Parent\n\nhumanoid.HealthChanged:Connect(function(health)\n  local percent = health / humanoid.MaxHealth\n  bar.Size = UDim2.new(percent, 0, 1, 0)\nend)",
+                    "category": "gui_advanced"
+                },
+                {
+                    "question": "how to make shop gui",
+                    "answer": "local button = script.Parent\nlocal price = 100\n\nbutton.MouseButton1Click:Connect(function()\n  local player = game.Players.LocalPlayer\n  game.ReplicatedStorage.BuyItem:FireServer('Sword', price)\nend)",
+                    "category": "gui_advanced"
+                }
+            ],
+            games: [
+                {
+                    "question": "how to make coin system",
+                    "answer": "-- Server Script\nlocal coin = script.Parent\nlocal value = 10\n\ncoin.Touched:Connect(function(hit)\n  local player = game.Players:GetPlayerFromCharacter(hit.Parent)\n  if player then\n    player.leaderstats.Coins.Value += value\n    coin:Destroy()\n  end\nend)",
+                    "category": "game_mechanics"
+                },
+                {
+                    "question": "how to make team system",
+                    "answer": "-- Create teams\nlocal Teams = game:GetService('Teams')\n\nlocal redTeam = Instance.new('Team')\nredTeam.Name = 'Red'\nredTeam.TeamColor = BrickColor.new('Bright red')\nredTeam.Parent = Teams\n\nlocal blueTeam = Instance.new('Team')\nblueTeam.Name = 'Blue'\nblueTeam.TeamColor = BrickColor.new('Bright blue')\nblueTeam.Parent = Teams\n\n-- Assign player\ngame.Players.PlayerAdded:Connect(function(player)\n  player.Team = redTeam\nend)",
+                    "category": "game_mechanics"
+                }
+            ],
+            tagalog: [
+                {
+                    "question": "paano gumawa ng loop",
+                    "answer": "May tatlong uri ng loop sa Lua:\n\n1. For loop:\nfor i = 1, 10 do\n  print(i)\nend\n\n2. While loop:\nwhile condition do\n  -- code\nend\n\n3. Repeat until:\nrepeat\n  -- code\nuntil condition",
+                    "category": "lua_basics",
+                    "language": "tl"
+                },
+                {
+                    "question": "paano mag print",
+                    "answer": "Gamitin ang print():\n\nprint('Hello World')\n\nPwede rin mag-print ng variable:\nlocal pangalan = 'Juan'\nprint(pangalan)",
+                    "category": "lua_basics",
+                    "language": "tl"
+                }
+            ]
+        };
+
+        function loadTemplate(type) {
+            const data = templates[type];
+            document.getElementById('trainingData').value = JSON.stringify(data, null, 2);
+        }
+
+        function validateJSON() {
+            const textarea = document.getElementById('trainingData');
+            try {
+                JSON.parse(textarea.value);
+                showResult('Valid JSON!', 'success');
+            } catch (e) {
+                showResult('Invalid JSON: ' + e.message, 'error');
+            }
+        }
+
+        function clearData() {
+            document.getElementById('trainingData').value = '';
+        }
+
+        async function bulkTrain() {
+            const textarea = document.getElementById('trainingData');
+            
+            let entries;
+            try {
+                entries = JSON.parse(textarea.value);
+            } catch (e) {
+                showResult('Invalid JSON format: ' + e.message, 'error');
+                return;
+            }
+
+            if (!Array.isArray(entries)) {
+                showResult('Data must be an array', 'error');
+                return;
+            }
+
+            showResult('Training... Please wait', 'info');
+
+            try {
+                const response = await fetch('/bulk-train', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ entries })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showResult(
+                        `✅ Success!\n${data.success_count} new entries learned\n${data.failed_count} duplicates skipped\nTotal knowledge: ${data.total_knowledge}`,
+                        'success'
+                    );
+                    loadStats();
+                } else {
+                    showResult('Error: ' + (data.error || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                showResult('Network error: ' + error.message, 'error');
+            }
+        }
+
+        function showResult(message, type) {
+            const result = document.getElementById('result');
+            result.textContent = message;
+            result.className = 'result ' + type;
+            result.style.display = 'block';
+        }
+
+        async function loadStats() {
+            try {
+                const response = await fetch('/stats');
+                const data = await response.json();
+                
+                document.getElementById('totalKnowledge').textContent = data.training_examples;
+                document.getElementById('accuracy').textContent = 
+                    (data.stats.accuracy * 100).toFixed(0) + '%';
+            } catch (error) {
+                console.error('Failed to load stats:', error);
+            }
+        }
+
+        loadStats();
+    </script>
+</body>
+</html>
