@@ -1,3 +1,4 @@
+
 import json
 import os
 import threading
@@ -6,6 +7,8 @@ from groq import Groq
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
+import google.generativeai as genai
+from openai import OpenAI
 
 class TrainingAI:
     def __init__(self):
@@ -17,10 +20,27 @@ class TrainingAI:
         self.afk_thread = None
         self.training_active = False
         
-        # Initialize Groq client
+        # Initialize ALL API clients
         self.groq_client = Groq(
             api_key="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"
         )
+        
+        # Initialize Google Gemini
+        genai.configure(api_key="AIzaSyD7BKismdl70NvLlgtHnaMcbaBrpBGPhUU")
+        self.gemini_model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        # Initialize OpenRouter
+        self.openrouter_client = OpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key="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",
+        )
+        
+        # API stats tracking
+        self.api_stats = {
+            'groq': {'success': 0, 'failed': 0},
+            'gemini': {'success': 0, 'failed': 0},
+            'openrouter': {'success': 0, 'failed': 0}
+        }
         
         # Topics for AFK training
         self.training_topics = [
@@ -78,7 +98,11 @@ class TrainingAI:
         
         self.load_data()
         print(f"AI loaded with {len(self.training_data)} learned conversations")
-        print("Groq AI autopilot ready - AFK mode available")
+        print("Multi-API System Ready:")
+        print("  ✓ Groq AI (Primary)")
+        print("  ✓ Google Gemini (Backup #1)")
+        print("  ✓ OpenRouter (Backup #2)")
+        print("AI will NEVER get stuck again! 🔥")
     
     def load_data(self):
         """Load training data from JSON file"""
@@ -146,7 +170,7 @@ class TrainingAI:
                 
                 if not already_learned:
                     print(f"AFK Training: Learning about '{topic}'...")
-                    response = self.get_groq_response(topic)
+                    response = self.get_multi_api_response(topic)
                     print(f"AFK: Successfully learned topic {self.training_index + 1}/{len(self.training_topics)}")
                 else:
                     print(f"AFK: Skipping '{topic}' (already learned)")
@@ -185,10 +209,9 @@ class TrainingAI:
         print(f"Auto-learned: '{q}'")
         return True
     
-    def get_groq_response(self, question):
-        """Get intelligent response from Groq AI and auto-save it"""
-        try:
-            system_prompt = """You are an expert programming tutor specializing in:
+    def get_multi_api_response(self, question):
+        """MULTI-API FALLBACK: Try all APIs until one works"""
+        system_prompt = """You are an expert programming tutor specializing in:
 - Roblox Lua scripting and game development
 - Roblox executor scripting and GUI development  
 - Lua programming for executors and scripts
@@ -205,7 +228,6 @@ Your teaching style:
 - Teach how to communicate professionally
 - Teach All Programmers Language if she wants 
 
-
 When discussing Roblox/Lua:
 - Focus on educational and development aspects
 - Provide technical knowledge about Lua and Roblox API
@@ -215,16 +237,13 @@ When discussing Roblox/Lua:
 
 Keep responses helpful and informative."""
 
+        # API 1: Try Groq first
+        try:
+            print("🔵 Trying Groq AI...")
             chat_completion = self.groq_client.chat.completions.create(
                 messages=[
-                    {
-                        "role": "system",
-                        "content": system_prompt
-                    },
-                    {
-                        "role": "user",
-                        "content": question
-                    }
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": question}
                 ],
                 model="llama-3.3-70b-versatile",
                 temperature=0.7,
@@ -232,15 +251,67 @@ Keep responses helpful and informative."""
             )
             
             response = chat_completion.choices[0].message.content
+            self.api_stats['groq']['success'] += 1
+            print("✅ Groq AI succeeded!")
             
-            # AUTO-SAVE: Groq teaches the AI automatically
+            # AUTO-SAVE
             self.add_conversation(question.lower().strip(), response)
-            
             return response
             
         except Exception as e:
-            print(f"Groq API Error: {e}")
-            return f"Sorry, I couldn't connect to my teacher (Groq AI). Error: {str(e)}"
+            self.api_stats['groq']['failed'] += 1
+            print(f"❌ Groq failed: {e}")
+        
+        # API 2: Try Gemini as backup
+        try:
+            print("🟢 Trying Google Gemini...")
+            gemini_response = self.gemini_model.generate_content(
+                f"{system_prompt}\n\nUser question: {question}"
+            )
+            
+            response = gemini_response.text
+            self.api_stats['gemini']['success'] += 1
+            print("✅ Gemini succeeded!")
+            
+            # AUTO-SAVE
+            self.add_conversation(question.lower().strip(), response)
+            return response
+            
+        except Exception as e:
+            self.api_stats['gemini']['failed'] += 1
+            print(f"❌ Gemini failed: {e}")
+        
+        # API 3: Try OpenRouter as final backup
+        try:
+            print("🟣 Trying OpenRouter...")
+            completion = self.openrouter_client.chat.completions.create(
+                model="meta-llama/llama-3.1-8b-instruct:free",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": question}
+                ],
+                temperature=0.7,
+                max_tokens=1500,
+            )
+            
+            response = completion.choices[0].message.content
+            self.api_stats['openrouter']['success'] += 1
+            print("✅ OpenRouter succeeded!")
+            
+            # AUTO-SAVE
+            self.add_conversation(question.lower().strip(), response)
+            return response
+            
+        except Exception as e:
+            self.api_stats['openrouter']['failed'] += 1
+            print(f"❌ OpenRouter failed: {e}")
+        
+        # ALL APIs FAILED
+        return "🚨 All AI teachers are temporarily unavailable. Your question has been saved and I'll learn it when they're back online!"
+    
+    def get_groq_response(self, question):
+        """Legacy method - now redirects to multi-API"""
+        return self.get_multi_api_response(question)
     
     def get_response(self, question):
         """Get AI response - respects current mode (Test/Learning)"""
@@ -279,19 +350,19 @@ Keep responses helpful and informative."""
         
         # 3. Not found in memory
         if self.groq_mode:
-            # LEARNING MODE: Ask Groq and learn
-            print(f"Learning Mode: Asking Groq AI about '{q}'")
-            answer = self.get_groq_response(question)
+            # LEARNING MODE: Use multi-API system
+            print(f"Learning Mode: Using multi-API system for '{q}'")
+            answer = self.get_multi_api_response(question)
             return {
                 'answer': answer,
-                'source': 'groq',
+                'source': 'multi-api',
                 'found': False
             }
         else:
-            # TEST MODE: Don't ask Groq, just say I don't know
+            # TEST MODE: Don't ask any API
             print(f"Test Mode: No match found for '{q}'")
             return {
-                'answer': "I don't know this yet. (Test Mode - Groq is OFF)",
+                'answer': "I don't know this yet. (Test Mode - AI teachers are OFF)",
                 'source': 'none',
                 'found': False
             }
@@ -304,7 +375,8 @@ Keep responses helpful and informative."""
             'groq_enabled': self.groq_mode,
             'afk_enabled': self.afk_mode,
             'afk_progress': f"{self.training_index}/{len(self.training_topics)}",
-            'mode': 'Learning Mode' if self.groq_mode else 'Test Mode'
+            'mode': 'Learning Mode' if self.groq_mode else 'Test Mode',
+            'api_stats': self.api_stats
         }
 
 # Create global AI instance
