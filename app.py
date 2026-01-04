@@ -20,52 +20,17 @@ def chat():
             'error': 'No question provided'
         }), 400
     
-    # Get response based on current mode
+    # Get response
     result = ai.get_response(question)
     stats = ai.get_stats()
     
     return jsonify({
         'response': result['answer'],
-        'source': result['source'],
-        'found_in_memory': result['found'],
-        'knowledge_count': stats['knowledge_count'],
-        'current_mode': stats['mode'],
-        'afk_progress': stats['afk_progress']
-    })
-
-@app.route('/switch-mode', methods=['POST'])
-def switch_mode():
-    """Switch between Test Mode and Learning Mode"""
-    data = request.json
-    groq_enabled = data.get('groq_enabled', True)
-    
-    mode_name = ai.set_mode(groq_enabled)
-    stats = ai.get_stats()
-    
-    return jsonify({
-        'success': True,
-        'mode': mode_name,
-        'groq_enabled': groq_enabled,
-        'message': f'Switched to {mode_name}'
-    })
-
-@app.route('/toggle-afk', methods=['POST'])
-def toggle_afk():
-    """Toggle AFK Auto-Training Mode"""
-    data = request.json
-    afk_enabled = data.get('afk_enabled', False)
-    
-    ai.set_afk_mode(afk_enabled)
-    stats = ai.get_stats()
-    
-    status_msg = "AFK Mode ENABLED - AI will auto-train every 3 seconds" if afk_enabled else "AFK Mode DISABLED"
-    
-    return jsonify({
-        'success': True,
-        'afk_enabled': afk_enabled,
-        'afk_progress': stats['afk_progress'],
-        'message': status_msg,
-        'knowledge_count': stats['knowledge_count']
+        'source': result.get('source', 'unknown'),
+        'found_in_memory': result.get('found', False),
+        'knowledge_count': stats['training_examples'],
+        'current_mode': 'Learning Mode',
+        'confidence': result.get('confidence', 0.0)
     })
 
 @app.route('/teach', methods=['POST'])
@@ -81,29 +46,47 @@ def teach():
         }), 400
     
     # Manually teach the AI
-    success = ai.add_conversation(question, answer)
+    lang = ai.detect_language(question)
+    success = ai.add_training_data(question, answer, 'user_taught', lang)
+    
+    # Retrain if enough data
+    if len(ai.training_data) >= 10:
+        ai.train_model()
+    
     stats = ai.get_stats()
     
     if success:
         return jsonify({
             'success': True,
             'message': 'Manual override saved! I learned from you directly!',
-            'knowledge_count': stats['knowledge_count']
+            'knowledge_count': stats['training_examples']
         })
     else:
         return jsonify({
-            'error': 'Failed to learn'
-        }), 500
+            'error': 'Failed to learn (duplicate question)'
+        }), 400
 
 @app.route('/stats', methods=['GET'])
 def stats():
     """Get AI statistics"""
     return jsonify(ai.get_stats())
 
+@app.route('/train', methods=['POST'])
+def train():
+    """Manually trigger model training"""
+    result = ai.train_model()
+    stats = ai.get_stats()
+    
+    return jsonify({
+        'success': True,
+        'message': result,
+        'stats': stats
+    })
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    print("Starting AI Training Server with AFK Mode...")
+    print("Starting AI Training Server...")
     print(f"AI knows {len(ai.training_data)} things")
-    print(f"Current Mode: Learning Mode (Groq ON)")
     print(f"Running on port {port}")
-    app.run(host='0.0.0.0', port=port, debug=True)
+    # FIXED: Set debug=False for production
+    app.run(host='0.0.0.0', port=port, debug=False)
