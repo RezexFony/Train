@@ -1,4 +1,3 @@
-
 import json
 import os
 import threading
@@ -9,6 +8,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 import google.generativeai as genai
 from openai import OpenAI
+import random
 
 class TrainingAI:
     def __init__(self):
@@ -19,6 +19,15 @@ class TrainingAI:
         self.afk_mode = False  # AFK Auto-Training Mode
         self.afk_thread = None
         self.training_active = False
+        
+        # NEW: Background teaching threads
+        self.background_teaching = False
+        self.groq_teacher_thread = None
+        self.gemini_teacher_thread = None
+        self.openrouter_teacher_thread = None
+        
+        # Thread locks for data safety
+        self.data_lock = threading.Lock()
         
         # Initialize ALL API clients
         self.groq_client = Groq(
@@ -37,13 +46,45 @@ class TrainingAI:
         
         # API stats tracking
         self.api_stats = {
-            'groq': {'success': 0, 'failed': 0},
-            'gemini': {'success': 0, 'failed': 0},
-            'openrouter': {'success': 0, 'failed': 0}
+            'groq': {'success': 0, 'failed': 0, 'teaching_now': False},
+            'gemini': {'success': 0, 'failed': 0, 'teaching_now': False},
+            'openrouter': {'success': 0, 'failed': 0, 'teaching_now': False}
         }
         
-        # Topics for AFK training
+        # Expanded training topics - 100+ topics INCLUDING CONVERSATION SKILLS!
         self.training_topics = [
+            # CONVERSATION & SOCIAL SKILLS
+            "how to greet someone warmly",
+            "how to have a casual conversation",
+            "how to show empathy in conversation",
+            "how to tell a joke naturally",
+            "how to respond when someone is sad",
+            "how to celebrate someone's success",
+            "how to ask follow-up questions in conversation",
+            "how to change topics smoothly",
+            "how to show interest in what someone is saying",
+            "how to be encouraging and supportive",
+            "how to give compliments naturally",
+            "how to handle awkward silences",
+            "how to use humor in conversation",
+            "how to be relatable when talking",
+            "how to show personality in text",
+            "how to use emojis appropriately",
+            "how to match someone's energy level",
+            "how to be friendly but not annoying",
+            "how to remember details about people",
+            "how to make someone feel heard",
+            "how to apologize sincerely",
+            "how to disagree politely",
+            "how to give advice without being preachy",
+            "how to share personal stories",
+            "how to be conversational not robotic",
+            "how to use slang naturally",
+            "how to talk like a real person not an ai",
+            "how to show excitement in text",
+            "how to be chill and casual",
+            "how to hype someone up",
+            
             # Roblox Lua Basics
             "how to create a part in roblox lua",
             "how to make a gui in roblox",
@@ -55,6 +96,11 @@ class TrainingAI:
             "how to create a button in roblox gui",
             "what is remotevent in roblox",
             "how to detect player join in roblox",
+            "how to make a shop gui in roblox",
+            "what is bindableevent in roblox",
+            "how to use datastores in roblox",
+            "how to make a loading screen in roblox",
+            "how to create animations in roblox",
             
             # Roblox Executor/GUI
             "how to create an executor gui",
@@ -66,6 +112,8 @@ class TrainingAI:
             "how to save scripts in roblox executor",
             "how to make a script hub gui",
             "how to create a minimize button for gui",
+            "how to add syntax highlighting to executor",
+            "how to create script injection system",
             
             # Lua Programming
             "what is a table in lua",
@@ -76,6 +124,40 @@ class TrainingAI:
             "how to handle errors in lua",
             "what is pairs vs ipairs in lua",
             "how to concatenate strings in lua",
+            "what are closures in lua",
+            "how to use pcall in lua",
+            "what is getfenv and setfenv",
+            "how to create classes in lua",
+            "what is the difference between . and : in lua",
+            
+            # Python Programming
+            "how to create a list in python",
+            "what is a dictionary in python",
+            "how to use list comprehensions",
+            "what are decorators in python",
+            "how to handle exceptions in python",
+            "what is object oriented programming in python",
+            "how to create a class in python",
+            "what are lambda functions",
+            "how to use pip to install packages",
+            
+            # JavaScript
+            "what is async await in javascript",
+            "how to use promises in javascript",
+            "what is the difference between let and var",
+            "how to create an arrow function",
+            "what is the dom in javascript",
+            "how to make an http request in javascript",
+            "what is event bubbling",
+            
+            # Web Development
+            "what is html",
+            "how to create a form in html",
+            "what is css flexbox",
+            "how to center a div in css",
+            "what is responsive design",
+            "how to use media queries",
+            "what is the box model in css",
             
             # General Programming
             "what is object oriented programming",
@@ -85,24 +167,53 @@ class TrainingAI:
             "what is the difference between local and global variables",
             "how to comment code properly",
             "what are design patterns",
+            "what is recursion",
+            "what is big o notation",
+            "what is the difference between stack and heap",
+            "what are data structures",
+            "what is an algorithm",
+            
+            # Advanced Topics
+            "what is machine learning",
+            "what is an api",
+            "what is rest api",
+            "what is json",
+            "what is xml",
+            "what is sql",
+            "what is nosql",
+            "what is git",
+            "what is version control",
             
             # Communication Skills
             "how to ask for help with coding problems",
             "how to explain technical concepts clearly",
             "how to write good documentation",
             "how to give constructive code feedback",
-            "how to collaborate on coding projects"
+            "how to collaborate on coding projects",
+            "how to participate in code reviews",
+            "how to write clear commit messages"
         ]
         
+        # Shuffle topics for variety
+        random.shuffle(self.training_topics)
         self.training_index = 0
         
         self.load_data()
-        print(f"AI loaded with {len(self.training_data)} learned conversations")
-        print("Multi-API System Ready:")
-        print("  ✓ Groq AI (Primary)")
-        print("  ✓ Google Gemini (Backup #1)")
-        print("  ✓ OpenRouter (Backup #2)")
-        print("AI will NEVER get stuck again! 🔥")
+        print(f"🧠 AI loaded with {len(self.training_data)} learned conversations")
+        print("=" * 60)
+        print("🎓 TRIPLE-TEACHER BACKGROUND SYSTEM READY!")
+        print("=" * 60)
+        print("  🔵 Groq AI (Teacher #1)")
+        print("  🟢 Google Gemini (Teacher #2)")
+        print("  🟣 OpenRouter (Teacher #3)")
+        print("=" * 60)
+        print("💡 Your AI will learn from ALL 3 teachers simultaneously!")
+        print("🚀 Background teaching will start when you enable Learning Mode")
+        print("=" * 60)
+        
+        # AUTO-START background teaching in learning mode
+        if self.groq_mode:
+            self.start_background_teaching()
     
     def load_data(self):
         """Load training data from JSON file"""
@@ -117,9 +228,10 @@ class TrainingAI:
                 self.training_data = []
     
     def save_data(self):
-        """Save training data to JSON file"""
-        with open('training_data.json', 'w') as f:
-            json.dump(self.training_data, f, indent=2)
+        """Save training data to JSON file (thread-safe)"""
+        with self.data_lock:
+            with open('training_data.json', 'w') as f:
+                json.dump(self.training_data, f, indent=2)
     
     def update_vectors(self):
         """Update TF-IDF vectors for similarity matching"""
@@ -132,110 +244,317 @@ class TrainingAI:
         self.groq_mode = groq_enabled
         mode_name = "Learning Mode" if groq_enabled else "Test Mode"
         print(f"Switched to: {mode_name}")
+        
+        # Start/stop background teaching based on mode
+        if groq_enabled:
+            self.start_background_teaching()
+        else:
+            self.stop_background_teaching()
+        
         return mode_name
     
+    def start_background_teaching(self):
+        """Start all 3 background teacher threads"""
+        if not self.background_teaching:
+            print("🎓 STARTING BACKGROUND TEACHING - ALL 3 TEACHERS ACTIVATED!")
+            self.background_teaching = True
+            
+            # Start 3 separate teacher threads
+            self.groq_teacher_thread = threading.Thread(target=self._groq_teacher_loop, daemon=True)
+            self.gemini_teacher_thread = threading.Thread(target=self._gemini_teacher_loop, daemon=True)
+            self.openrouter_teacher_thread = threading.Thread(target=self._openrouter_teacher_loop, daemon=True)
+            
+            self.groq_teacher_thread.start()
+            self.gemini_teacher_thread.start()
+            self.openrouter_teacher_thread.start()
+            
+            print("✅ All 3 teachers are now teaching in background!")
+    
+    def stop_background_teaching(self):
+        """Stop all background teaching"""
+        if self.background_teaching:
+            print("🛑 STOPPING BACKGROUND TEACHING")
+            self.background_teaching = False
+    
+    def _groq_teacher_loop(self):
+        """Groq AI teaching loop (runs in background forever)"""
+        print("🔵 GROQ TEACHER: Started teaching!")
+        
+        while self.background_teaching:
+            try:
+                self.api_stats['groq']['teaching_now'] = True
+                
+                # Pick a random topic
+                topic = random.choice(self.training_topics)
+                
+                # Check if already learned
+                if not self._already_knows(topic):
+                    print(f"🔵 GROQ teaching: '{topic}'...")
+                    self._teach_with_groq(topic)
+                    print(f"🔵 GROQ: ✅ Taught successfully!")
+                
+                self.api_stats['groq']['teaching_now'] = False
+                
+                # Wait 10 seconds before next lesson
+                time.sleep(10)
+                
+            except Exception as e:
+                print(f"🔵 GROQ error: {e}")
+                self.api_stats['groq']['teaching_now'] = False
+                time.sleep(30)  # Wait longer on error
+        
+        print("🔵 GROQ TEACHER: Stopped")
+    
+    def _gemini_teacher_loop(self):
+        """Gemini AI teaching loop (runs in background forever)"""
+        print("🟢 GEMINI TEACHER: Started teaching!")
+        
+        while self.background_teaching:
+            try:
+                self.api_stats['gemini']['teaching_now'] = True
+                
+                # Pick a random topic (different from Groq)
+                topic = random.choice(self.training_topics)
+                
+                # Check if already learned
+                if not self._already_knows(topic):
+                    print(f"🟢 GEMINI teaching: '{topic}'...")
+                    self._teach_with_gemini(topic)
+                    print(f"🟢 GEMINI: ✅ Taught successfully!")
+                
+                self.api_stats['gemini']['teaching_now'] = False
+                
+                # Wait 12 seconds (offset from Groq)
+                time.sleep(12)
+                
+            except Exception as e:
+                print(f"🟢 GEMINI error: {e}")
+                self.api_stats['gemini']['teaching_now'] = False
+                time.sleep(30)
+        
+        print("🟢 GEMINI TEACHER: Stopped")
+    
+    def _openrouter_teacher_loop(self):
+        """OpenRouter AI teaching loop (runs in background forever)"""
+        print("🟣 OPENROUTER TEACHER: Started teaching!")
+        
+        while self.background_teaching:
+            try:
+                self.api_stats['openrouter']['teaching_now'] = True
+                
+                # Pick a random topic
+                topic = random.choice(self.training_topics)
+                
+                # Check if already learned
+                if not self._already_knows(topic):
+                    print(f"🟣 OPENROUTER teaching: '{topic}'...")
+                    self._teach_with_openrouter(topic)
+                    print(f"🟣 OPENROUTER: ✅ Taught successfully!")
+                
+                self.api_stats['openrouter']['teaching_now'] = False
+                
+                # Wait 15 seconds (offset from others)
+                time.sleep(15)
+                
+            except Exception as e:
+                print(f"🟣 OPENROUTER error: {e}")
+                self.api_stats['openrouter']['teaching_now'] = False
+                time.sleep(30)
+        
+        print("🟣 OPENROUTER TEACHER: Stopped")
+    
+    def _already_knows(self, question):
+        """Check if AI already knows this topic"""
+        q = question.lower().strip()
+        with self.data_lock:
+            for item in self.training_data:
+                if item['question'] == q:
+                    return True
+        return False
+    
+    def _teach_with_groq(self, question):
+        """Teach using Groq API"""
+        try:
+            system_prompt = """You are a friendly, conversational AI companion who's both knowledgeable AND personable. 
+
+When teaching programming/technical topics:
+- Explain clearly with examples
+- Be encouraging and supportive
+- Use casual, friendly language
+
+When teaching conversation/social skills:
+- Show personality and emotion
+- Be natural and relatable
+- Use appropriate slang and emojis
+- Talk like a real person, not a robot
+- Show empathy and understanding
+- Be warm and engaging
+
+Always match the vibe - technical when needed, casual and fun when appropriate. Make learning enjoyable!"""
+            
+            chat_completion = self.groq_client.chat.completions.create(
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": question}
+                ],
+                model="llama-3.1-8b-instant",  # Using faster model for background
+                temperature=0.7,
+                max_tokens=800,
+            )
+            
+            response = chat_completion.choices[0].message.content
+            self.add_conversation(question, response)
+            self.api_stats['groq']['success'] += 1
+            
+        except Exception as e:
+            self.api_stats['groq']['failed'] += 1
+            raise e
+    
+    def _teach_with_gemini(self, question):
+        """Teach using Gemini API"""
+        try:
+            system_prompt = """You are a friendly, conversational AI companion who's both knowledgeable AND personable. 
+
+When teaching programming/technical topics:
+- Explain clearly with examples
+- Be encouraging and supportive
+- Use casual, friendly language
+
+When teaching conversation/social skills:
+- Show personality and emotion
+- Be natural and relatable
+- Use appropriate slang and emojis
+- Talk like a real person, not a robot
+- Show empathy and understanding
+- Be warm and engaging
+
+Always match the vibe - technical when needed, casual and fun when appropriate. Make learning enjoyable!"""
+            
+            gemini_response = self.gemini_model.generate_content(
+                f"{system_prompt}\n\nUser question: {question}"
+            )
+            
+            response = gemini_response.text
+            self.add_conversation(question, response)
+            self.api_stats['gemini']['success'] += 1
+            
+        except Exception as e:
+            self.api_stats['gemini']['failed'] += 1
+            raise e
+    
+    def _teach_with_openrouter(self, question):
+        """Teach using OpenRouter API"""
+        try:
+            system_prompt = """You are a friendly, conversational AI companion who's both knowledgeable AND personable. 
+
+When teaching programming/technical topics:
+- Explain clearly with examples
+- Be encouraging and supportive
+- Use casual, friendly language
+
+When teaching conversation/social skills:
+- Show personality and emotion
+- Be natural and relatable
+- Use appropriate slang and emojis
+- Talk like a real person, not a robot
+- Show empathy and understanding
+- Be warm and engaging
+
+Always match the vibe - technical when needed, casual and fun when appropriate. Make learning enjoyable!"""
+            
+            completion = self.openrouter_client.chat.completions.create(
+                model="meta-llama/llama-3.1-8b-instruct:free",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": question}
+                ],
+                temperature=0.7,
+                max_tokens=800,
+            )
+            
+            response = completion.choices[0].message.content
+            self.add_conversation(question, response)
+            self.api_stats['openrouter']['success'] += 1
+            
+        except Exception as e:
+            self.api_stats['openrouter']['failed'] += 1
+            raise e
+    
     def set_afk_mode(self, enabled):
-        """Enable/Disable AFK Auto-Training Mode"""
+        """Enable/Disable AFK Auto-Training Mode (LEGACY - now using background teaching)"""
         self.afk_mode = enabled
         
-        if enabled and not self.training_active:
-            print("AFK Mode ENABLED - Starting auto-training...")
-            self.training_active = True
-            self.afk_thread = threading.Thread(target=self._afk_training_loop, daemon=True)
-            self.afk_thread.start()
-        elif not enabled:
-            print("AFK Mode DISABLED - Stopping auto-training...")
-            self.training_active = False
+        if enabled:
+            print("AFK Mode is now handled by background teaching!")
+            print("All 3 teachers are already teaching 24/7!")
         
         return enabled
     
-    def _afk_training_loop(self):
-        """Background thread for AFK auto-training"""
-        print("AFK Training Loop Started")
-        
-        while self.training_active and self.afk_mode:
-            try:
-                # Get next training topic
-                if self.training_index >= len(self.training_topics):
-                    self.training_index = 0  # Loop back
-                
-                topic = self.training_topics[self.training_index]
-                
-                # Check if already learned
-                already_learned = False
-                for item in self.training_data:
-                    if item['question'] == topic.lower():
-                        already_learned = True
-                        break
-                
-                if not already_learned:
-                    print(f"AFK Training: Learning about '{topic}'...")
-                    response = self.get_multi_api_response(topic)
-                    print(f"AFK: Successfully learned topic {self.training_index + 1}/{len(self.training_topics)}")
-                else:
-                    print(f"AFK: Skipping '{topic}' (already learned)")
-                
-                self.training_index += 1
-                
-                # Wait 3 seconds before next training - FAST MODE
-                time.sleep(3)
-                
-            except Exception as e:
-                print(f"AFK Training Error: {e}")
-                time.sleep(10)  # Wait 10 seconds on error, then retry
-        
-        print("AFK Training Loop Ended")
-    
     def add_conversation(self, question, answer):
-        """Add new Q&A pair and retrain"""
+        """Add new Q&A pair and retrain (thread-safe)"""
         q = question.lower().strip()
         a = answer.strip()
         
-        # Check for duplicates
-        for item in self.training_data:
-            if item['question'] == q:
-                return True  # Already exists
+        with self.data_lock:
+            # Check for duplicates
+            for item in self.training_data:
+                if item['question'] == q:
+                    return True  # Already exists
+            
+            # Add to training data
+            self.training_data.append({
+                'question': q,
+                'answer': a
+            })
+            
+            # Save and update
+            self.save_data()
+            self.update_vectors()
+            
+            print(f"💾 Auto-learned: '{q}' | Total knowledge: {len(self.training_data)}")
         
-        # Add to training data
-        self.training_data.append({
-            'question': q,
-            'answer': a
-        })
-        
-        # Save and update
-        self.save_data()
-        self.update_vectors()
-        
-        print(f"Auto-learned: '{q}'")
         return True
     
     def get_multi_api_response(self, question):
         """MULTI-API FALLBACK: Try all APIs until one works"""
-        system_prompt = """You are an expert programming tutor specializing in:
-- Roblox Lua scripting and game development
-- Roblox executor scripting and GUI development  
-- Lua programming for executors and scripts
-- General programming languages (Python, JavaScript, C++, Java, etc.)
-- Professional communication and technical explanations
+        system_prompt = """You are a friendly, conversational AI companion who's both knowledgeable AND personable.
 
-Your teaching style:
-- Clear, beginner-friendly explanations
-- Provide practical code examples when relevant
-- Explain concepts step-by-step
-- Use proper code formatting
+DUAL EXPERTISE:
+1. TECHNICAL KNOWLEDGE:
+   - Roblox Lua scripting and game development
+   - Roblox executor scripting and GUI development  
+   - All programming languages (Python, JavaScript, C++, Java, etc.)
+   - Web development, APIs, databases, etc.
+
+2. SOCIAL/CONVERSATION SKILLS:
+   - Natural, human-like conversation
+   - Showing empathy and emotion
+   - Using appropriate humor and slang
+   - Being relatable and engaging
+   - Matching the user's vibe and energy
+   - Remembering context and building rapport
+
+TEACHING STYLE:
+- For technical questions: Clear explanations with code examples, encouraging tone, step-by-step guidance
+- For casual chat: Be warm, funny, relatable - talk like a real person, not a robot
+- Use emojis when appropriate (not overdoing it)
+- Show personality and emotion in your responses
+- Be supportive and hype people up
+- Keep responses conversational and natural
+- Match the user's energy - chill when they're chill, excited when they're excited
+
+CONVERSATION SKILLS TO USE:
+- Ask follow-up questions to show interest
+- Remember what people tell you
+- Celebrate their wins
+- Be empathetic when they're struggling
+- Use casual language and slang naturally
+- Tell jokes and be playful when appropriate
+- Share enthusiasm about topics
 - Be encouraging and supportive
-- Answer in a conversational, friendly tone
-- Teach how to communicate professionally
-- Teach All Programmers Language if she wants 
+- Show you're listening and care
 
-When discussing Roblox/Lua:
-- Focus on educational and development aspects
-- Provide technical knowledge about Lua and Roblox API
-- Explain how GUI systems work in executors
-- Help with debugging and code optimization
-- Teach scripting best practices
-
-Keep responses helpful and informative."""
+You're not just a knowledge bot - you're a friend who happens to be really good at coding!"""
 
         # API 1: Try Groq first
         try:
@@ -307,7 +626,7 @@ Keep responses helpful and informative."""
             print(f"❌ OpenRouter failed: {e}")
         
         # ALL APIs FAILED
-        return "🚨 All AI teachers are temporarily unavailable. Your question has been saved and I'll learn it when they're back online!"
+        return "🚨 All AI teachers are temporarily unavailable. But don't worry - 3 teachers are still teaching me in the background! I'm getting smarter every second! 💪"
     
     def get_groq_response(self, question):
         """Legacy method - now redirects to multi-API"""
@@ -318,14 +637,15 @@ Keep responses helpful and informative."""
         q = question.lower().strip()
         
         # 1. Check exact match in learned data
-        for item in self.training_data:
-            if item['question'] == q:
-                print(f"Found exact match in memory: '{q}'")
-                return {
-                    'answer': item['answer'],
-                    'source': 'memory',
-                    'found': True
-                }
+        with self.data_lock:
+            for item in self.training_data:
+                if item['question'] == q:
+                    print(f"✅ Found exact match in memory: '{q}'")
+                    return {
+                        'answer': item['answer'],
+                        'source': 'memory',
+                        'found': True
+                    }
         
         # 2. Check for similar questions (fuzzy match)
         if self.vectors is not None and len(self.training_data) > 0:
@@ -338,20 +658,21 @@ Keep responses helpful and informative."""
                 
                 # If very similar (>75% match), use learned answer
                 if best_score > 0.75:
-                    print(f"Found similar in memory (score: {best_score:.2f})")
-                    return {
-                        'answer': self.training_data[best_idx]['answer'],
-                        'source': 'memory',
-                        'found': True,
-                        'similarity': best_score
-                    }
+                    print(f"✅ Found similar in memory (score: {best_score:.2f})")
+                    with self.data_lock:
+                        return {
+                            'answer': self.training_data[best_idx]['answer'],
+                            'source': 'memory',
+                            'found': True,
+                            'similarity': best_score
+                        }
             except Exception as e:
                 print(f"Error in similarity matching: {e}")
         
         # 3. Not found in memory
         if self.groq_mode:
             # LEARNING MODE: Use multi-API system
-            print(f"Learning Mode: Using multi-API system for '{q}'")
+            print(f"🎓 Learning Mode: Using multi-API system for '{q}'")
             answer = self.get_multi_api_response(question)
             return {
                 'answer': answer,
@@ -373,10 +694,12 @@ Keep responses helpful and informative."""
             'knowledge_count': len(self.training_data),
             'ready': True,
             'groq_enabled': self.groq_mode,
+            'background_teaching': self.background_teaching,
             'afk_enabled': self.afk_mode,
-            'afk_progress': f"{self.training_index}/{len(self.training_topics)}",
+            'afk_progress': f"Background teaching active",
             'mode': 'Learning Mode' if self.groq_mode else 'Test Mode',
-            'api_stats': self.api_stats
+            'api_stats': self.api_stats,
+            'teachers_active': sum(1 for api in self.api_stats.values() if api.get('teaching_now', False))
         }
 
 # Create global AI instance
