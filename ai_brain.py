@@ -40,9 +40,10 @@ class RobloxLuaAI:
                              'kasi', 'oo', 'hindi', 'salamat', 'kamusta', 'kumusta',
                              'magandang', 'araw', 'gabi', 'umaga', 'tanghali'}
         
-        # MongoDB connection
+        # MongoDB connection flag
         self.db = None
         self.collection = None
+        self.is_connected = False
         self.connect_db()
         
         # Load base knowledge if database is empty
@@ -82,6 +83,7 @@ class RobloxLuaAI:
             # Create index on question field for faster queries
             self.collection.create_index('question', unique=True)
             
+            self.is_connected = True
             print("✅ Connected to MongoDB!")
             return True
         except Exception as e:
@@ -89,11 +91,12 @@ class RobloxLuaAI:
             print("⚠️ AI will work but won't save data permanently")
             self.db = None
             self.collection = None
+            self.is_connected = False
             return False
     
     def get_knowledge_count(self):
         """Get total knowledge entries"""
-        if self.collection:
+        if self.is_connected and self.collection is not None:
             try:
                 return self.collection.count_documents({})
             except Exception as e:
@@ -107,7 +110,7 @@ class RobloxLuaAI:
         q = question.lower().strip()
         
         # Try MongoDB first
-        if self.collection:
+        if self.is_connected and self.collection is not None:
             try:
                 doc = {
                     'question': q,
@@ -152,7 +155,7 @@ class RobloxLuaAI:
     
     def get_all_training_data(self):
         """Get all training data from MongoDB or memory"""
-        if self.collection:
+        if self.is_connected and self.collection is not None:
             try:
                 return list(self.collection.find({}).sort('_id', 1))
             except Exception as e:
@@ -160,6 +163,11 @@ class RobloxLuaAI:
         
         # Fallback to memory storage
         return self.memory_storage
+    
+    @property
+    def training_data(self):
+        """Property for backward compatibility"""
+        return self.get_all_training_data()
     
     def train_model(self):
         """Train the ML model with current data"""
@@ -268,7 +276,7 @@ class RobloxLuaAI:
     
     def delete_knowledge(self, question):
         """Delete a specific knowledge entry"""
-        if not self.collection:
+        if not self.is_connected or self.collection is None:
             return False
         
         try:
