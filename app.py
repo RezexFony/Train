@@ -11,7 +11,7 @@ def home():
 
 @app.route('/chat', methods=['POST'])
 def chat():
-    """Handle chat requests"""
+    """Handle chat requests - AI auto-learns from Groq"""
     data = request.json
     question = data.get('question', '').strip()
     
@@ -20,26 +20,20 @@ def chat():
             'error': 'No question provided'
         }), 400
     
-    # Try to get response from AI
+    # Get response - AI will auto-learn if needed
     response = ai.get_response(question)
     stats = ai.get_stats()
     
-    if response:
-        return jsonify({
-            'response': response,
-            'learned': True,
-            'knowledge_count': stats['knowledge_count']
-        })
-    else:
-        return jsonify({
-            'response': "🤔 I don't know the answer to that yet. Can you teach me?",
-            'learned': False,
-            'knowledge_count': stats['knowledge_count']
-        })
+    return jsonify({
+        'response': response,
+        'learned': True,  # Always true since Groq teaches automatically
+        'knowledge_count': stats['knowledge_count'],
+        'auto_learned': True
+    })
 
 @app.route('/teach', methods=['POST'])
 def teach():
-    """Handle teaching requests"""
+    """Handle manual teaching requests (optional override)"""
     data = request.json
     question = data.get('question', '').strip()
     answer = data.get('answer', '').strip()
@@ -49,14 +43,14 @@ def teach():
             'error': 'Both question and answer are required'
         }), 400
     
-    # Teach the AI
+    # Manually teach the AI (override Groq response)
     success = ai.add_conversation(question, answer)
     stats = ai.get_stats()
     
     if success:
         return jsonify({
             'success': True,
-            'message': '✅ Thanks for teaching me! I learned something new! 🧠',
+            'message': '✅ Manual override saved! I learned from you directly! 🎓',
             'knowledge_count': stats['knowledge_count']
         })
     else:
@@ -71,7 +65,8 @@ def stats():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    print("🚀 Starting AI Training Server...")
+    print("🚀 Starting AI Training Server with Groq Auto-Learning...")
     print(f"📚 AI knows {len(ai.training_data)} things")
+    print(f"🤖 Groq AI will automatically teach new topics!")
     print(f"🌍 Running on port {port}")
     app.run(host='0.0.0.0', port=port, debug=True)
