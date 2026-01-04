@@ -127,6 +127,10 @@ def delete():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print("Starting AI Training Server with MongoDB...")
-    print(f"AI knows {ai.get_knowledge_count()} things")
+    try:
+        knowledge_count = ai.get_knowledge_count()
+        print(f"AI knows {knowledge_count} things")
+    except Exception as e:
+        print(f"Warning: Could not load knowledge count: {e}")
     print(f"Running on port {port}")
     app.run(host='0.0.0.0', port=port, debug=False)
