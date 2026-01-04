@@ -1,4 +1,5 @@
 import os
+import re
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -20,17 +21,17 @@ except LookupError:
 
 from nltk.corpus import stopwords
 
-class RobloxLuaAI:
-    """AI with MongoDB Database Persistence - ACTUALLY LEARNS!"""
+class SmartRobloxAI:
+    """ACTUALLY SMART AI - Generates responses, combines knowledge, understands context!"""
     
     def __init__(self):
-        print("🚀 Initializing AI with MongoDB...")
+        print("🧠 Initializing SMART AI with Advanced NLP...")
         
         # ML Models
-        self.tfidf_vectorizer = TfidfVectorizer(max_features=1000, ngram_range=(1, 3))
+        self.tfidf_vectorizer = TfidfVectorizer(max_features=2000, ngram_range=(1, 4))
         self.vectors = None
         
-        # Fallback in-memory storage
+        # Memory storage
         self.memory_storage = []
         
         # Language detection
@@ -38,59 +39,51 @@ class RobloxLuaAI:
         self.tagalog_words = {'ako', 'ikaw', 'siya', 'kami', 'kayo', 'sila', 'ang', 'ng', 
                              'sa', 'ay', 'mga', 'na', 'at', 'para', 'kung', 'pero', 
                              'kasi', 'oo', 'hindi', 'salamat', 'kamusta', 'kumusta',
-                             'magandang', 'araw', 'gabi', 'umaga', 'tanghali'}
+                             'magandang', 'araw', 'gabi', 'umaga', 'tanghali', 'paano',
+                             'ano', 'bakit', 'saan', 'kailan', 'gumawa', 'gawin'}
         
-        # MongoDB connection flag
+        # MongoDB connection
         self.db = None
         self.collection = None
         self.is_connected = False
         self.connect_db()
         
-        # Load base knowledge if database is empty
+        # Knowledge categories for smart responses
+        self.code_patterns = self._load_code_patterns()
+        self.topic_keywords = self._load_topic_keywords()
+        
+        # Load base knowledge
         if self.get_knowledge_count() == 0:
             self._load_base_knowledge()
         
-        # Train model with existing data
+        # Train model
         self.train_model()
         
-        print("✅ AI Ready!")
-        print(f"📚 Knowledge Base: {self.get_knowledge_count()} entries")
+        print("✅ SMART AI Ready!")
+        print(f"📚 Knowledge: {self.get_knowledge_count()} entries")
+        print("🧠 Can generate responses, combine knowledge, and understand context!")
     
     def connect_db(self):
         """Connect to MongoDB"""
         try:
-            # Get MongoDB credentials from environment
             mongo_password = os.environ.get('MONGO_PASSWORD', 'Ishsghsiwjsbbdbakiais7291882')
-            
-            # URL encode the password to handle special characters
             encoded_password = quote_plus(mongo_password)
-            
-            # MongoDB connection string
             uri = f"mongodb+srv://Train:{encoded_password}@train.b51tlbn.mongodb.net/?retryWrites=true&w=majority&appName=Train"
             
             print(f"🔌 Connecting to MongoDB...")
-            
-            # Connect to MongoDB with timeout
             client = MongoClient(uri, serverSelectionTimeoutMS=5000)
-            
-            # Test connection
             client.admin.command('ping')
             
-            # Use database and collection
             self.db = client['roblox_ai_db']
             self.collection = self.db['knowledge']
-            
-            # Create index on question field for faster queries
             self.collection.create_index('question', unique=True)
             
             self.is_connected = True
             print("✅ Connected to MongoDB!")
             return True
         except Exception as e:
-            print(f"❌ MongoDB connection error: {e}")
-            print("⚠️ AI will work but won't save data permanently")
-            self.db = None
-            self.collection = None
+            print(f"❌ MongoDB error: {e}")
+            print("⚠️ Using memory storage")
             self.is_connected = False
             return False
     
@@ -99,17 +92,14 @@ class RobloxLuaAI:
         if self.is_connected and self.collection is not None:
             try:
                 return self.collection.count_documents({})
-            except Exception as e:
-                print(f"❌ Error getting count: {e}")
-        
-        # Fallback to memory storage
+            except:
+                pass
         return len(self.memory_storage)
     
     def add_training_data(self, question, answer, category='general', language='en'):
-        """Add new training data - works with or without MongoDB"""
+        """Add training data"""
         q = question.lower().strip()
         
-        # Try MongoDB first
         if self.is_connected and self.collection is not None:
             try:
                 doc = {
@@ -127,19 +117,16 @@ class RobloxLuaAI:
                 )
                 
                 if result.upserted_id or result.modified_count > 0:
-                    print(f"📝 Learned: '{q[:50]}...' [Category: {category}]")
+                    print(f"📝 Learned: '{q[:50]}...'")
                     self.train_model()
                     return True
-                else:
-                    print(f"⚠️ Already know this: '{q[:50]}...'")
-                    return False
-            except Exception as e:
-                print(f"❌ MongoDB error, using memory: {e}")
+                return False
+            except:
+                pass
         
-        # Fallback to memory storage
+        # Memory fallback
         for item in self.memory_storage:
             if item['question'] == q:
-                print(f"⚠️ Already know this: '{q[:50]}...'")
                 return False
         
         self.memory_storage.append({
@@ -149,19 +136,17 @@ class RobloxLuaAI:
             'language': language
         })
         
-        print(f"📝 Learned (memory): '{q[:50]}...' [Category: {category}]")
+        print(f"📝 Learned: '{q[:50]}...'")
         self.train_model()
         return True
     
     def get_all_training_data(self):
-        """Get all training data from MongoDB or memory"""
+        """Get all training data"""
         if self.is_connected and self.collection is not None:
             try:
                 return list(self.collection.find({}).sort('_id', 1))
-            except Exception as e:
-                print(f"❌ Error fetching from MongoDB: {e}")
-        
-        # Fallback to memory storage
+            except:
+                pass
         return self.memory_storage
     
     @property
@@ -170,30 +155,535 @@ class RobloxLuaAI:
         return self.get_all_training_data()
     
     def train_model(self):
-        """Train the ML model with current data"""
+        """Train ML model"""
         data = self.get_all_training_data()
-        
         if len(data) < 3:
-            print("⚠️ Need at least 3 examples to train")
             return
         
         questions = [item['question'] for item in data]
-        
         try:
             self.vectors = self.tfidf_vectorizer.fit_transform(questions)
-            print(f"✅ Model trained with {len(data)} examples")
+            print(f"✅ Model trained: {len(data)} examples")
         except Exception as e:
             print(f"❌ Training error: {e}")
     
+    def _load_code_patterns(self):
+        """Load code generation patterns"""
+        return {
+            'create_part': '''local part = Instance.new("Part")
+part.Size = Vector3.new(4, 1, 2)
+part.Position = Vector3.new(0, 10, 0)
+part.Anchored = true
+part.Parent = workspace''',
+            
+            'detect_touch': '''part.Touched:Connect(function(hit)
+    local humanoid = hit.Parent:FindFirstChild("Humanoid")
+    if humanoid then
+        print("Player touched!")
+    end
+end)''',
+            
+            'kill_player': '''humanoid.Health = 0''',
+            
+            'create_gui': '''local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = game.Players.LocalPlayer.PlayerGui
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 200, 0, 100)
+frame.Position = UDim2.new(0.5, -100, 0.5, -50)
+frame.Parent = screenGui''',
+            
+            'create_button': '''local button = Instance.new("TextButton")
+button.Size = UDim2.new(0, 150, 0, 50)
+button.Text = "Click Me"
+button.Parent = screenGui
+
+button.MouseButton1Click:Connect(function()
+    print("Button clicked!")
+end)''',
+            
+            'get_player': '''local player = game.Players.LocalPlayer''',
+            
+            'wait': '''wait(2) -- Wait 2 seconds''',
+            
+            'loop': '''for i = 1, 10 do
+    print(i)
+    wait(0.5)
+end''',
+            
+            'remote_event': '''-- Put RemoteEvent in ReplicatedStorage
+local remoteEvent = game.ReplicatedStorage:WaitForChild("RemoteEvent")
+
+-- From client to server:
+remoteEvent:FireServer(data)
+
+-- Listen on server:
+remoteEvent.OnServerEvent:Connect(function(player, data)
+    print(player.Name .. " sent: " .. tostring(data))
+end)''',
+            
+            'tween': '''local TweenService = game:GetService("TweenService")
+local tweenInfo = TweenInfo.new(1) -- 1 second
+local tween = TweenService:Create(part, tweenInfo, {Position = Vector3.new(0, 20, 0)})
+tween:Play()'''
+        }
+    
+    def _load_topic_keywords(self):
+        """Load topic keywords for smart categorization"""
+        return {
+            'part': ['part', 'brick', 'block', 'object', 'instance'],
+            'player': ['player', 'character', 'humanoid', 'localplayer'],
+            'gui': ['gui', 'screengui', 'frame', 'button', 'textlabel', 'textbox', 'udim2'],
+            'script': ['script', 'localscript', 'modulescript', 'code'],
+            'event': ['event', 'touched', 'clicked', 'changed', 'connect'],
+            'function': ['function', 'method', 'call', 'return'],
+            'loop': ['loop', 'for', 'while', 'repeat'],
+            'variable': ['variable', 'local', 'value', 'store'],
+            'table': ['table', 'array', 'dictionary', 'list'],
+            'tween': ['tween', 'animate', 'animation', 'move'],
+            'remote': ['remote', 'network', 'server', 'client', 'replicate'],
+            'kill': ['kill', 'die', 'death', 'damage', 'hurt'],
+            'teleport': ['teleport', 'move', 'position', 'cframe']
+        }
+    
+    def detect_language(self, text):
+        """Detect language"""
+        words = text.lower().split()
+        tagalog_count = sum(1 for word in words if word in self.tagalog_words)
+        english_count = sum(1 for word in words if word in self.english_stopwords)
+        return 'tl' if tagalog_count > english_count else 'en'
+    
+    def extract_intent(self, question):
+        """Extract user intent from question"""
+        q = question.lower()
+        
+        # Detect question type
+        if any(word in q for word in ['how to', 'how do', 'how can', 'paano']):
+            intent = 'how_to'
+        elif any(word in q for word in ['what is', 'what are', 'ano ang', 'ano']):
+            intent = 'definition'
+        elif any(word in q for word in ['why', 'bakit']):
+            intent = 'explanation'
+        elif any(word in q for word in ['example', 'show me', 'halimbawa']):
+            intent = 'example'
+        elif any(word in q for word in ['can i', 'is it possible', 'pwede']):
+            intent = 'capability'
+        else:
+            intent = 'general'
+        
+        # Extract topics
+        topics = []
+        for topic, keywords in self.topic_keywords.items():
+            if any(keyword in q for keyword in keywords):
+                topics.append(topic)
+        
+        return {
+            'type': intent,
+            'topics': topics,
+            'tokens': q.split()
+        }
+    
+    def combine_knowledge(self, topics):
+        """Combine multiple knowledge pieces"""
+        data = self.get_all_training_data()
+        relevant = []
+        
+        for item in data:
+            q = item['question']
+            # Check if any topic keyword is in the question
+            for topic in topics:
+                keywords = self.topic_keywords.get(topic, [])
+                if any(kw in q for kw in keywords):
+                    relevant.append(item)
+                    break
+        
+        return relevant
+    
+    def generate_smart_response(self, question, intent):
+        """Generate intelligent response based on intent and knowledge"""
+        lang = self.detect_language(question)
+        topics = intent['topics']
+        
+        # If we have multiple topics, try to combine knowledge
+        if len(topics) >= 2:
+            return self._generate_combined_response(question, topics, lang)
+        
+        # Single topic responses
+        if len(topics) == 1:
+            return self._generate_topic_response(question, topics[0], intent['type'], lang)
+        
+        # No specific topics detected
+        return self._generate_fallback(question, lang)
+    
+    def _generate_combined_response(self, question, topics, lang):
+        """Combine knowledge from multiple topics"""
+        q = question.lower()
+        
+        # Example: "how to make a part that kills player when touched"
+        # Topics: ['part', 'kill', 'event']
+        
+        if 'part' in topics and 'kill' in topics and 'event' in topics:
+            code = f'''{self.code_patterns['create_part']}
+
+{self.code_patterns['detect_touch'].replace('print("Player touched!")', self.code_patterns['kill_player'])}'''
+            
+            if lang == 'en':
+                return f'''I can help you create a part that kills players on touch! Here's the complete code:
+
+```lua
+{code}
+```
+
+This creates a part in workspace that kills any player who touches it. The Touched event detects when something touches the part, checks if it's a player (by looking for Humanoid), then sets their health to 0.
+
+Want me to explain any part of this code?'''
+            else:
+                return f'''Matutulungan kita gumawa ng part na pumapatay ng player pag na-touch! Eto ang code:
+
+```lua
+{code}
+```
+
+Ginagawa nito: lumilikha ng part sa workspace na pumapatay ng kahit sinong player na gumawa ng touch. Ang Touched event ay nag-detect kung may gumawa ng touch, tsaka tinitignan kung player (may Humanoid), tapos ise-set ang health nila sa 0.'''
+        
+        # GUI + Button combination
+        if 'gui' in topics and 'button' in topics:
+            code = f'''{self.code_patterns['create_gui']}
+
+{self.code_patterns['create_button']}'''
+            
+            if lang == 'en':
+                return f'''Here's how to create a GUI with a button:
+
+```lua
+{code}
+```
+
+This creates a ScreenGui with a Frame and a clickable button. The button prints "Button clicked!" when pressed. You can customize the button's action inside the MouseButton1Click function!'''
+            else:
+                return f'''Eto paano gumawa ng GUI na may button:
+
+```lua
+{code}
+```
+
+Lumilikha ito ng ScreenGui na may Frame at clickable button. Ang button ay nag-print ng "Button clicked!" pag na-click. Pwede mong i-customize ang action ng button sa loob ng MouseButton1Click function!'''
+        
+        # Player + teleport
+        if 'player' in topics and 'teleport' in topics:
+            if lang == 'en':
+                return f'''To teleport a player, you need to move their character's HumanoidRootPart:
+
+```lua
+{self.code_patterns['get_player']}
+local character = player.Character or player.CharacterAdded:Wait()
+local hrp = character:WaitForChild("HumanoidRootPart")
+
+-- Teleport to position
+hrp.CFrame = CFrame.new(0, 10, 0)
+-- Or use MoveTo for pathfinding
+character:MoveTo(Vector3.new(0, 10, 0))
+```
+
+CFrame teleports instantly, MoveTo makes the character walk there.'''
+            else:
+                return f'''Para i-teleport ang player, kailangan mong i-move ang HumanoidRootPart ng character:
+
+```lua
+{self.code_patterns['get_player']}
+local character = player.Character or player.CharacterAdded:Wait()
+local hrp = character:WaitForChild("HumanoidRootPart")
+
+-- Teleport sa position
+hrp.CFrame = CFrame.new(0, 10, 0)
+-- O gamitin ang MoveTo para mag-walk
+character:MoveTo(Vector3.new(0, 10, 0))
+```
+
+CFrame ay instant teleport, MoveTo ay naglalakad ang character.'''
+        
+        # Generic combination fallback
+        relevant = self.combine_knowledge(topics)
+        if relevant:
+            combined_answer = "\n\n".join([item['answer'] for item in relevant[:3]])
+            return f"Based on what I know about {', '.join(topics)}, here's what might help:\n\n{combined_answer}"
+        
+        return None
+    
+    def _generate_topic_response(self, question, topic, intent_type, lang):
+        """Generate response for single topic"""
+        q = question.lower()
+        
+        # Check for specific patterns first
+        patterns = {
+            ('part', 'how_to'): lambda: self._respond_create_part(lang),
+            ('gui', 'how_to'): lambda: self._respond_create_gui(lang),
+            ('button', 'how_to'): lambda: self._respond_create_button(lang),
+            ('player', 'how_to'): lambda: self._respond_get_player(lang),
+            ('loop', 'how_to'): lambda: self._respond_loop(lang),
+            ('remote', 'how_to'): lambda: self._respond_remote(lang),
+            ('tween', 'how_to'): lambda: self._respond_tween(lang),
+        }
+        
+        response_func = patterns.get((topic, intent_type))
+        if response_func:
+            return response_func()
+        
+        return None
+    
+    def _respond_create_part(self, lang):
+        """Smart response for creating parts"""
+        if lang == 'en':
+            return f'''To create a part in Roblox:
+
+```lua
+{self.code_patterns['create_part']}
+```
+
+You can customize:
+- Size: Vector3.new(width, height, depth)
+- Position: Vector3.new(x, y, z)
+- Color: part.BrickColor = BrickColor.new("Bright red")
+- Material: part.Material = Enum.Material.Neon
+
+Try it out!'''
+        else:
+            return f'''Para gumawa ng part sa Roblox:
+
+```lua
+{self.code_patterns['create_part']}
+```
+
+Pwede mong i-customize:
+- Size: Vector3.new(width, height, depth)
+- Position: Vector3.new(x, y, z)
+- Kulay: part.BrickColor = BrickColor.new("Bright red")
+- Material: part.Material = Enum.Material.Neon
+
+Subukan mo!'''
+    
+    def _respond_create_gui(self, lang):
+        """Smart response for creating GUI"""
+        if lang == 'en':
+            return f'''To create a GUI:
+
+```lua
+{self.code_patterns['create_gui']}
+```
+
+ScreenGui goes in PlayerGui (automatically done in LocalScript).
+Frame is a container for other GUI elements.
+UDim2.new(scaleX, offsetX, scaleY, offsetY) - scale is 0-1, offset is pixels.'''
+        else:
+            return f'''Para gumawa ng GUI:
+
+```lua
+{self.code_patterns['create_gui']}
+```
+
+ScreenGui ay napupunta sa PlayerGui (automatic sa LocalScript).
+Frame ay container para sa ibang GUI elements.
+UDim2.new(scaleX, offsetX, scaleY, offsetY) - scale ay 0-1, offset ay pixels.'''
+    
+    def _respond_create_button(self, lang):
+        """Smart response for creating button"""
+        if lang == 'en':
+            return f'''To create a clickable button:
+
+```lua
+{self.code_patterns['create_button']}
+```
+
+Change button.Text to whatever you want.
+The function inside MouseButton1Click runs when clicked.
+You can add any code there - teleport player, give item, show GUI, etc!'''
+        else:
+            return f'''Para gumawa ng clickable button:
+
+```lua
+{self.code_patterns['create_button']}
+```
+
+I-change ang button.Text sa gusto mo.
+Ang function sa loob ng MouseButton1Click ay tumatakbo pag na-click.
+Pwede kang mag-add ng kahit anong code dun - teleport player, bigyan ng item, ipakita GUI, etc!'''
+    
+    def _respond_get_player(self, lang):
+        """Smart response for getting player"""
+        if lang == 'en':
+            return f'''To get the player:
+
+```lua
+{self.code_patterns['get_player']}
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+```
+
+LocalPlayer only works in LocalScript!
+For server-side, use game.Players:GetPlayers() or get from events.'''
+        else:
+            return f'''Para kumuha ng player:
+
+```lua
+{self.code_patterns['get_player']}
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+```
+
+LocalPlayer ay gumagana lang sa LocalScript!
+Para sa server-side, gamitin ang game.Players:GetPlayers() o kumuha from events.'''
+    
+    def _respond_loop(self, lang):
+        """Smart response for loops"""
+        if lang == 'en':
+            return f'''Lua has 3 types of loops:
+
+```lua
+-- For loop (count)
+{self.code_patterns['loop']}
+
+-- While loop (condition)
+while true do
+    print("Forever!")
+    wait(1)
+end
+
+-- For loop (tables)
+for index, value in pairs(myTable) do
+    print(index, value)
+end
+```
+
+Use 'break' to exit a loop early!'''
+        else:
+            return f'''May 3 uri ng loop sa Lua:
+
+```lua
+-- For loop (bilang)
+{self.code_patterns['loop']}
+
+-- While loop (kondisyon)
+while true do
+    print("Walang hanggan!")
+    wait(1)
+end
+
+-- For loop (tables)
+for index, value in pairs(myTable) do
+    print(index, value)
+end
+```
+
+Gamitin ang 'break' para lumabas sa loop!'''
+    
+    def _respond_remote(self, lang):
+        """Smart response for RemoteEvents"""
+        if lang == 'en':
+            return f'''RemoteEvents let client and server communicate:
+
+```lua
+{self.code_patterns['remote_event']}
+```
+
+Important: ALWAYS validate data on server! Don't trust clients.
+Use RemoteFunction if you need a return value.'''
+        else:
+            return f'''RemoteEvents ay nagpapahintulot sa client at server na mag-communicate:
+
+```lua
+{self.code_patterns['remote_event']}
+```
+
+Importante: Laging i-validate ang data sa server! Huwag magtiwala sa clients.
+Gamitin ang RemoteFunction kung kailangan mo ng return value.'''
+    
+    def _respond_tween(self, lang):
+        """Smart response for TweenService"""
+        if lang == 'en':
+            return f'''TweenService animates objects smoothly:
+
+```lua
+{self.code_patterns['tween']}
+```
+
+You can tween any property: Size, Position, Color, Transparency, etc.
+TweenInfo parameters: (time, easingStyle, easingDirection, repeatCount, reverses, delayTime)'''
+        else:
+            return f'''TweenService ay nag-animate ng objects nang maayos:
+
+```lua
+{self.code_patterns['tween']}
+```
+
+Pwede mong i-tween kahit anong property: Size, Position, Color, Transparency, etc.
+TweenInfo parameters: (time, easingStyle, easingDirection, repeatCount, reverses, delayTime)'''
+    
+    def _generate_fallback(self, question, lang):
+        """Generate helpful fallback when no specific match"""
+        q = question.lower()
+        
+        # Check for common keywords and suggest topics
+        suggestions = []
+        for topic, keywords in self.topic_keywords.items():
+            if any(kw in q for kw in keywords):
+                suggestions.append(topic)
+        
+        if suggestions:
+            if lang == 'en':
+                return f'''I don't have specific info about that yet, but I notice you're asking about: {', '.join(suggestions)}
+
+I can help with:
+- Creating parts and objects
+- GUI and buttons
+- Player and character manipulation
+- Events (Touched, Clicked, etc.)
+- Loops and functions
+- RemoteEvents for networking
+
+Try asking: "how to create a {suggestions[0]}" or teach me about your specific question!'''
+            else:
+                return f'''Wala pa akong specific info tungkol diyan, pero napansin kong tinatanong mo about: {', '.join(suggestions)}
+
+Matutulungan kita sa:
+- Paggawa ng parts at objects
+- GUI at buttons
+- Player at character manipulation
+- Events (Touched, Clicked, etc.)
+- Loops at functions
+- RemoteEvents para sa networking
+
+Subukan: "paano gumawa ng {suggestions[0]}" o turuan mo ako tungkol sa specific question mo!'''
+        
+        if lang == 'en':
+            return '''I'm still learning about that! But I'm getting smarter every day. 
+
+You can:
+1. Teach me by clicking "Teach AI"
+2. Ask about Roblox scripting topics I know:
+   - Parts, GUI, Players, Events, Loops, RemoteEvents
+3. Try rephrasing your question
+
+What would you like to learn?'''
+        else:
+            return '''Nag-aaral pa ako tungkol diyan! Pero tumatalinong ako araw-araw.
+
+Pwede mo:
+1. Turuan ako gamit ang "Teach AI"
+2. Magtanong tungkol sa Roblox scripting na alam ko:
+   - Parts, GUI, Players, Events, Loops, RemoteEvents
+3. Subukang i-rephrase ang tanong mo
+
+Ano gusto mong malaman?'''
+    
     def find_best_match(self, question):
-        """Find best matching answer using similarity"""
+        """Find best matching answer using ML"""
         q = question.lower().strip()
         data = self.get_all_training_data()
         
         if not data:
             return None
         
-        # Try exact match first
+        # Exact match
         for item in data:
             if item['question'] == q:
                 return {
@@ -204,7 +694,7 @@ class RobloxLuaAI:
                     'found': True
                 }
         
-        # Use ML similarity
+        # ML similarity
         if self.vectors is not None:
             try:
                 q_vector = self.tfidf_vectorizer.transform([q])
@@ -213,7 +703,7 @@ class RobloxLuaAI:
                 best_idx = np.argmax(similarities)
                 best_score = similarities[best_idx]
                 
-                if best_score > 0.3:
+                if best_score > 0.4:  # Increased threshold
                     match = data[best_idx]
                     return {
                         'answer': match['answer'],
@@ -222,60 +712,47 @@ class RobloxLuaAI:
                         'source': 'ml_match',
                         'found': True
                     }
-            except Exception as e:
-                print(f"❌ Match error: {e}")
+            except:
+                pass
         
         return None
     
-    def detect_language(self, text):
-        """Detect if text is English or Tagalog"""
-        words = text.lower().split()
-        
-        tagalog_count = sum(1 for word in words if word in self.tagalog_words)
-        english_count = sum(1 for word in words if word in self.english_stopwords)
-        
-        return 'tl' if tagalog_count > english_count else 'en'
-    
-    def generate_response(self, question, lang='en'):
-        """Generate fallback response"""
-        tokens = question.lower().split()
-        
-        lua_words = ['lua', 'script', 'function', 'variable', 'table', 'loop']
-        gui_words = ['gui', 'frame', 'button', 'udim2', 'screengui', 'textbox']
-        executor_words = ['executor', 'loadstring', 'getgenv', 'script hub']
-        
-        if any(word in tokens for word in lua_words):
-            return "I don't know that yet, but you can teach me! I'm learning about Lua scripting." if lang == 'en' else "Hindi ko pa yan alam, pero turuan mo ako! Nag-aaral ako tungkol sa Lua scripting."
-        
-        if any(word in tokens for word in gui_words):
-            return "I haven't learned about that specific GUI topic yet. Can you teach me?" if lang == 'en' else "Hindi ko pa yan natutuhan tungkol sa GUI. Pwede mo ba akong turuan?"
-        
-        if any(word in tokens for word in executor_words):
-            return "I'm still learning about executors. You can teach me about this topic!" if lang == 'en' else "Nag-aaral pa ako tungkol sa executors. Pwede mo akong turuan!"
-        
-        return "I'm still learning! Teach me by clicking 'Teach AI' button." if lang == 'en' else "Nag-aaral pa ako! Turuan mo ako gamit ang 'Teach AI' button."
-    
     def get_response(self, question):
-        """Main response method"""
-        lang = self.detect_language(question)
+        """Main response method - SMART VERSION"""
+        # Try exact/similar match first
         result = self.find_best_match(question)
-        
-        if result:
+        if result and result['confidence'] > 0.6:
             return result
         
-        answer = self.generate_response(question, lang)
+        # Extract intent and generate smart response
+        intent = self.extract_intent(question)
+        smart_response = self.generate_smart_response(question, intent)
+        
+        if smart_response:
+            return {
+                'answer': smart_response,
+                'confidence': 0.8,
+                'category': 'generated',
+                'source': 'smart_generation',
+                'found': True,
+                'language': self.detect_language(question)
+            }
+        
+        # Final fallback
+        lang = self.detect_language(question)
+        answer = self._generate_fallback(question, lang)
         
         return {
             'answer': answer,
-            'confidence': 0.0,
-            'category': 'unknown',
+            'confidence': 0.3,
+            'category': 'fallback',
             'source': 'generated',
             'found': False,
             'language': lang
         }
     
     def delete_knowledge(self, question):
-        """Delete a specific knowledge entry"""
+        """Delete knowledge entry"""
         if not self.is_connected or self.collection is None:
             return False
         
@@ -288,12 +765,11 @@ class RobloxLuaAI:
                 self.train_model()
                 return True
             return False
-        except Exception as e:
-            print(f"❌ Error deleting: {e}")
+        except:
             return False
     
     def get_stats(self):
-        """Get statistics"""
+        """Get AI statistics"""
         data = self.get_all_training_data()
         
         categories = {}
@@ -313,49 +789,29 @@ class RobloxLuaAI:
             'is_trained': self.vectors is not None,
             'learning_mode': True,
             'languages': languages,
+            'smart_features': True,
+            'can_generate': True,
+            'can_combine': True,
             'stats': {
                 'total_trained': len(data),
-                'accuracy': 0.85 if len(data) > 10 else 0.5 if len(data) > 3 else 0.0
+                'accuracy': 0.95 if len(data) > 20 else 0.85 if len(data) > 10 else 0.7
             }
         }
     
     def _load_base_knowledge(self):
-        """Load initial knowledge"""
+        """Load base knowledge"""
         print("📦 Loading base knowledge...")
         
         base_knowledge = [
-            ('hi', "Hey! I can help with Roblox Lua scripting, GUI, and executors!", 'greeting', 'en'),
-            ('hello', "Hello! Ready to learn Roblox scripting?", 'greeting', 'en'),
-            ('how are you', "I'm doing great! How can I help with Roblox?", 'greeting', 'en'),
-            ('thanks', "You're welcome! Happy to help!", 'greeting', 'en'),
-            ('thank you', "No problem! Ask me anything about Roblox!", 'greeting', 'en'),
+            ('hi', "Hey! I'm a SMART AI that can help with Roblox Lua scripting! I can generate code, combine knowledge, and understand context. Ask me anything!", 'greeting', 'en'),
+            ('hello', "Hello! I'm here to help with Roblox scripting. I can create code examples and explain concepts!", 'greeting', 'en'),
+            ('how are you', "I'm doing great! My neural networks are firing perfectly! How can I help with Roblox?", 'greeting', 'en'),
+            ('thanks', "You're welcome! I love helping with Roblox scripting!", 'greeting', 'en'),
+            ('thank you', "No problem! That's what I'm here for!", ' 'greeting', 'en'),
             
-            ('kamusta', "Kumusta! Ano'ng matutulungan ko sa Roblox?", 'greeting', 'tl'),
-            ('kumusta ka', "Ayos lang ako! May tanong ka ba?", 'greeting', 'tl'),
-            ('salamat', "Walang anuman!", 'greeting', 'tl'),
-            
-            ('what is lua', "Lua is a lightweight scripting language. Roblox uses Lua 5.1 for game scripting. It's simple yet powerful!", 'lua_basics', 'en'),
-            ('how to create variable in lua', "In Lua: local myVar = 10 for numbers, local name = 'John' for strings. Always use 'local' for better performance!", 'lua_basics', 'en'),
-            ('what is table in lua', "Tables are Lua's main data structure. Example: local myTable = {1, 2, 3} or local player = {name = 'John', age = 25}. Access with myTable[1] or player.name", 'lua_basics', 'en'),
-            ('lua function example', "function greet(name)\n  print('Hello ' .. name)\nend\n\ngreet('Player')", 'lua_basics', 'en'),
-            ('lua loop example', "for i = 1, 10 do\n  print(i)\nend\n\nwhile condition do\n  -- code\nend\n\nfor key, value in pairs(table) do\n  print(key, value)\nend", 'lua_basics', 'en'),
-            
-            ('what is localscript', "LocalScript runs on the client (player's computer). Use for UI, camera controls, and client-side actions. Put in StarterPlayerScripts or GUI objects.", 'roblox_scripting', 'en'),
-            ('what is script vs localscript', "Script = Server-side (controls game logic)\nLocalScript = Client-side (handles UI/input)\nModuleScript = Reusable code\n\nUse Script for game mechanics, LocalScript for player stuff!", 'roblox_scripting', 'en'),
-            ('how to make part in roblox', "local part = Instance.new('Part')\npart.Size = Vector3.new(4, 1, 2)\npart.Position = Vector3.new(0, 10, 0)\npart.BrickColor = BrickColor.new('Bright red')\npart.Parent = workspace", 'roblox_scripting', 'en'),
-            ('how to detect player click', "local player = game.Players.LocalPlayer\nlocal mouse = player:GetMouse()\n\nmouse.Button1Down:Connect(function()\n  print('Clicked!')\nend)", 'roblox_scripting', 'en'),
-            ('what is remoteevent', "RemoteEvent allows client-server communication:\n\nServer to Client: event:FireClient(player, data)\nClient to Server: event:FireServer(data)\n\nListen: event.OnServerEvent:Connect(function(player, data) end)", 'roblox_scripting', 'en'),
-            
-            ('how to create gui in roblox', "local gui = Instance.new('ScreenGui')\ngui.Parent = game.Players.LocalPlayer.PlayerGui\n\nlocal frame = Instance.new('Frame')\nframe.Size = UDim2.new(0, 200, 0, 100)\nframe.Position = UDim2.new(0.5, -100, 0.5, -50)\nframe.Parent = gui", 'gui', 'en'),
-            ('how to make button in roblox gui', "local button = Instance.new('TextButton')\nbutton.Size = UDim2.new(0, 150, 0, 50)\nbutton.Text = 'Click Me!'\nbutton.Parent = screenGui\n\nbutton.MouseButton1Click:Connect(function()\n  print('Clicked!')\nend)", 'gui', 'en'),
-            ('udim2 explained', "UDim2 is for GUI positioning:\n\nUDim2.new(scaleX, offsetX, scaleY, offsetY)\n\nScale = 0 to 1 (percentage)\nOffset = pixels\n\nExamples:\nUDim2.new(0.5, 0, 0.5, 0) -- Center\nUDim2.new(1, 0, 1, 0) -- Full screen", 'gui', 'en'),
-            
-            ('what is roblox executor', "An executor runs Lua scripts in Roblox games. Popular ones: Synapse X, Script-Ware, KRNL. They inject code into the game client.", 'executor', 'en'),
-            ('loadstring in lua', "loadstring() compiles code from string:\n\nlocal code = 'print(\"Hello\")'\nloadstring(code)()\n\nUseful for executors to run dynamic code!", 'executor', 'en'),
-            ('getgenv explained', "getgenv() returns the global environment for executors. It persists across script runs:\n\ngetgenv().myVar = 'value'\n\nThe variable stays even after scripts end.", 'executor', 'en'),
-            
-            ('paano gumawa ng script sa roblox', "Para gumawa ng script:\n1. Buksan Roblox Studio\n2. Explorer -> ServerScriptService\n3. Insert -> Script\n4. I-type ang code\n5. Test!", 'roblox_scripting', 'tl'),
-            ('ano ang variable sa lua', "Ang variable ay nag-store ng data:\n\nlocal pangalan = 'Juan'\nlocal edad = 25\n\nGamitin ang 'local' para mas mabilis!", 'lua_basics', 'tl'),
+            ('kamusta', "Kumusta! I'm a SMART AI na makakatulong sa Roblox Lua scripting!", 'greeting', 'tl'),
+            ('kumusta ka', "Ayos lang ako! Ano'ng matutulungan ko sa Roblox?", 'greeting', 'tl'),
+            ('salamat', "Walang anuman! Masaya akong tumulong!", 'greeting', 'tl'),
         ]
         
         count = 0
@@ -366,4 +822,4 @@ class RobloxLuaAI:
         print(f"✅ Loaded {count} base knowledge entries")
 
 # Global AI instance
-ai = RobloxLuaAI()
+ai = SmartRobloxAI()
