@@ -58,7 +58,7 @@ def toggle_afk():
     ai.set_afk_mode(afk_enabled)
     stats = ai.get_stats()
     
-    status_msg = "AFK Mode ENABLED - AI will auto-train every 30 seconds" if afk_enabled else "AFK Mode DISABLED"
+    status_msg = "AFK Mode ENABLED - AI will auto-train every 3 seconds" if afk_enabled else "AFK Mode DISABLED"
     
     return jsonify({
         'success': True,
