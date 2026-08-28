@@ -1,7 +1,0 @@
-flask
-gunicorn
-numpy
-scikit-learn
-nltk
-pymongo[srv]
-dnspython
