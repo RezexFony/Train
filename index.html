@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Napoleon · loading</title>
+    <!-- Google Fonts for elegant typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        /* Reset & base */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #0f0e0c; /* deep parchment black */
+            font-family: 'Inter', sans-serif;
+            color: #e8e2d4;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            padding: 1rem;
+        }
+
+        /* main container holds loader + content */
+        .container {
+            width: 100%;
+            max-width: 900px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* ----- LOADING SCREEN (simple) ----- */
+        .loading-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1.8rem;
+            animation: fadeIn 0.9s ease;
+        }
+
+        .loading-ring {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            border: 3px solid rgba(220, 200, 170, 0.15);
+            border-top: 3px solid #c8b28b;
+            animation: spin 1.1s linear infinite;
+            box-shadow: 0 0 20px rgba(200, 178, 139, 0.1);
+        }
+
+        .loading-text {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            font-weight: 400;
+            color: #c8b28b;
+            opacity: 0.9;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.6);
+            animation: pulseSoft 1.8s infinite alternate;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes pulseSoft {
+            0% { opacity: 0.5; letter-spacing: 5px; }
+            100% { opacity: 1; letter-spacing: 8px; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ----- MAIN CONTENT (hidden initially) ----- */
+        .content {
+            display: none; /* hidden until loader fades */
+            width: 100%;
+            animation: contentAppear 1s ease forwards;
+        }
+
+        @keyframes contentAppear {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Napoleon card */
+        .napoleon-card {
+            background: linear-gradient(145deg, #1a1816 0%, #23201c 100%);
+            border: 1px solid #3b352c;
+            border-radius: 32px;
+            padding: 2.5rem 2.2rem;
+            box-shadow: 0 30px 50px -15px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255, 240, 210, 0.05);
+            backdrop-filter: blur(2px);
+            transition: box-shadow 0.3s;
+        }
+
+        .napoleon-card:hover {
+            box-shadow: 0 40px 60px -15px #0a0806, inset 0 1px 2px rgba(220, 190, 140, 0.1);
+        }
+
+        h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-weight: 700;
+            font-size: 3.2rem;
+            letter-spacing: 2px;
+            color: #dac29a;
+            margin-bottom: 0.2rem;
+            line-height: 1.1;
+            border-left: 6px solid #b99f77;
+            padding-left: 1.4rem;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.7);
+        }
+
+        .subhead {
+            font-family: 'Inter', sans-serif;
+            font-weight: 300;
+            font-size: 1rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #a99b86;
+            margin-bottom: 2rem;
+            padding-left: 1.9rem;
+        }
+
+        .divider {
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #4f473a, #b99f77, #4f473a, transparent);
+            margin: 1.5rem 0 2rem 0;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.6rem 2rem;
+            margin-bottom: 2.2rem;
+        }
+
+        .info-item {
+            border-bottom: 1px dotted #3e3a32;
+            padding-bottom: 0.9rem;
+        }
+
+        .info-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #9c8e7a;
+            font-weight: 500;
+            display: block;
+            margin-bottom: 0.3rem;
+        }
+
+        .info-value {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.35rem;
+            font-weight: 600;
+            color: #e3d7c0;
+            line-height: 1.3;
+        }
+
+        .quote {
+            font-family: 'Cormorant Garamond', serif;
+            font-style: italic;
+            font-size: 1.3rem;
+            color: #cfc1a8;
+            border-left: 3px solid #b99f77;
+            padding: 0.6rem 0 0.6rem 1.5rem;
+            margin: 1.8rem 0 1.2rem;
+            background: rgba(185, 159, 119, 0.03);
+            border-radius: 0 8px 8px 0;
+        }
+
+        .bio {
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: #c9beb0;
+            margin: 1.5rem 0 0.5rem;
+        }
+
+        .badge {
+            display: inline-block;
+            background: rgba(185, 159, 119, 0.12);
+            border: 1px solid #4d4436;
+            border-radius: 40px;
+            padding: 0.3rem 1rem;
+            font-size: 0.7rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: #b9a17b;
+            margin-top: 1.2rem;
+        }
+
+        /* ----- FOOTER: BRUCKLE (very bottom, small, barely visible) ----- */
+        .bruckle-footer {
+            width: 100%;
+            text-align: center;
+            font-size: 0.6rem;
+            letter-spacing: 3px;
+            color: #4b4137;
+            text-transform: uppercase;
+            padding: 1.2rem 0 0.6rem;
+            margin-top: 1.2rem;
+            border-top: 1px solid rgba(80, 70, 55, 0.3);
+            font-weight: 300;
+            opacity: 0.35;
+            transition: opacity 0.3s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .bruckle-footer:hover {
+            opacity: 0.8;
+            color: #a08e75;
+        }
+
+        /* utility */
+        .hidden {
+            display: none !important;
+        }
+
+        /* mobile */
+        @media (max-width: 600px) {
+            .napoleon-card {
+                padding: 1.8rem 1.4rem;
+            }
+            h1 {
+                font-size: 2.2rem;
+                padding-left: 1rem;
+            }
+            .subhead {
+                padding-left: 1.3rem;
+                font-size: 0.8rem;
+            }
+            .info-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            .info-value {
+                font-size: 1.2rem;
+            }
+            .quote {
+                font-size: 1.1rem;
+                padding-left: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- LOADING SCREEN (visible first) -->
+        <div id="loadingScreen" class="loading-screen">
+            <div class="loading-ring"></div>
+            <div class="loading-text">LOADING</div>
+        </div>
+
+        <!-- MAIN CONTENT (will be revealed after loading) -->
+        <div id="mainContent" class="content hidden">
+            <div class="napoleon-card">
+                <h1>Napoléon Bonaparte</h1>
+                <div class="subhead">Emperor of the French</div>
+
+                <div class="divider"></div>
+
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Born</span>
+                        <span class="info-value">15 August 1769</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Died</span>
+                        <span class="info-value">5 May 1821</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Reign</span>
+                        <span class="info-value">1804 – 1814/1815</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Titles</span>
+                        <span class="info-value">Emperor, General</span>
+                    </div>
+                </div>
+
+                <div class="quote">
+                    “Impossible is a word to be found only in the dictionary of fools.”
+                </div>
+
+                <div class="bio">
+                    Napoleon Bonaparte was a French military commander and political leader who rose to prominence 
+                    during the French Revolution and led several successful campaigns. He was Emperor of the French 
+                    from 1804 to 1814, and again briefly in 1815. His legal reform, the Napoleonic Code, 
+                    influenced civil law systems worldwide. He is remembered as one of the greatest military 
+                    tacticians in history.
+                </div>
+
+                <div class="badge">⚔️ 1769 – 1821</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BRUCKLE footer - very bottom, small, barely visible -->
+    <footer class="bruckle-footer">BRUCKLE</footer>
+
+    <script>
+        (function() {
+            // Wait for the DOM to be fully loaded
+            window.addEventListener('load', function() {
+                const loadingScreen = document.getElementById('loadingScreen');
+                const mainContent = document.getElementById('mainContent');
+
+                // Duration for loading screen (milliseconds) — you can adjust
+                const LOADING_DURATION = 2000; // 2 seconds
+
+                // After the loading duration, hide loading screen and show main content
+                setTimeout(function() {
+                    // Hide loading screen
+                    loadingScreen.style.display = 'none';
+                    // Show main content and remove hidden class
+                    mainContent.classList.remove('hidden');
+                    // Ensure it's displayed (content class has display:none until shown)
+                    mainContent.style.display = 'block';
+                }, LOADING_DURATION);
+
+                // Optional: if something goes wrong, fallback after 4s (never stuck)
+                // but we already have the timeout above. No need.
+            });
+
+            // In case the page is cached or load event is delayed, we also set a fallback
+            // using DOMContentLoaded for faster response
+            if (document.readyState === 'complete') {
+                // Page already loaded (e.g., from bfcache)
+                const loadingScreen = document.getElementById('loadingScreen');
+                const mainContent = document.getElementById('mainContent');
+                if (loadingScreen && mainContent) {
+                    setTimeout(function() {
+                        loadingScreen.style.display = 'none';
+                        mainContent.classList.remove('hidden');
+                        mainContent.style.display = 'block';
+                    }, 1500); // slightly shorter if already cached
+                }
+            } else {
+                // set a backup timer just in case the load event takes too long
+                document.addEventListener('DOMContentLoaded', function() {
+                    // If load event hasn't fired yet, still start the timer
+                    const loadingScreen = document.getElementById('loadingScreen');
+                    const mainContent = document.getElementById('mainContent');
+                    if (loadingScreen && mainContent) {
+                        // Check after 1.5s if loading screen still visible (load event might be slow)
+                        // But we want consistent 2s from load, so we only use this as fallback
+                        // Better to rely on load event, but if load takes >4s, show content.
+                        setTimeout(function() {
+                            if (loadingScreen.style.display !== 'none') {
+                                loadingScreen.style.display = 'none';
+                                mainContent.classList.remove('hidden');
+                                mainContent.style.display = 'block';
+                            }
+                        }, 3500); // after 3.5s from DOM ready, show content anyway
+                    }
+                });
+            }
+        })();
+    </script>
+</body>
+</html>
